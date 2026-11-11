@@ -685,17 +685,45 @@
                             <p class="text-xs text-slate-500 mt-1">Quy tắc mã ca Excel: bắt đầu bằng <strong>M</strong> = Ca Sáng, <strong>E</strong> = Ca Chiều, <strong>N</strong> = Ca Đêm (Cột 1: Tên NV, Cột 2 -> 8: Thứ 2 -> Chủ Nhật).</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <input type="date" id="schedule-filter-date" onchange="renderScheduleTable()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium">
-                            <label class="px-3.5 py-2 bg-ios-green hover:bg-ios-green/90 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5 cursor-pointer">
-                                <i data-lucide="upload" class="w-4 h-4"></i> Upload Excel
-                                <input type="file" onchange="importScheduleExcel(event)" accept=".xlsx, .xls, .csv" class="hidden">
-                            </label>
+                            <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs">
+                                <span class="text-slate-500 font-semibold">Xem ngày:</span>
+                                <input type="date" id="schedule-filter-date" onchange="renderScheduleTable()" class="bg-transparent font-bold focus:outline-none">
+                                <button onclick="clearScheduleDateFilter()" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 font-semibold" title="Xem tất cả các ngày">Tất cả</button>
+                            </div>
                             <button onclick="downloadScheduleTemplate()" class="px-3.5 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5">
                                 <i data-lucide="download" class="w-4 h-4 text-ios-teal"></i> Tải File Mẫu Tuần
                             </button>
                             <button onclick="openAssignScheduleModal()" class="px-4 py-2 bg-ios-teal hover:bg-ios-teal/90 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5">
                                 <i data-lucide="user-plus" class="w-4 h-4"></i> Phân Ca Lẻ
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Khung chọn khoảng ngày để Upload Excel (Ghi đè chống trùng lặp) -->
+                    <div class="p-4 rounded-2xl bg-ios-teal/5 border border-ios-teal/20 flex flex-wrap items-center justify-between gap-4 text-xs">
+                        <div class="space-y-1">
+                            <div class="font-bold text-ios-teal flex items-center gap-1.5 text-sm">
+                                <i data-lucide="calendar-range" class="w-4 h-4"></i> Khoảng Thời Gian Áp Dụng Khi Upload Lịch Excel
+                            </div>
+                            <p class="text-slate-500 dark:text-slate-400 text-[11px]">
+                                Hệ thống sẽ tự động <strong>xóa lịch cũ nằm trong các ngày được cập nhật</strong> để tránh trùng lặp, đồng thời giữ nguyên lịch của các ngày khác.
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <div>
+                                <label class="block font-bold text-slate-500 uppercase text-[10px] mb-1">Từ ngày (Thứ 2 đầu tuần)</label>
+                                <input type="date" id="upload-sched-start-date" onchange="syncUploadEndDate()" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-500 uppercase text-[10px] mb-1">Đến hết ngày (Chủ Nhật)</label>
+                                <input type="date" id="upload-sched-end-date" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold">
+                            </div>
+                            <div class="pt-4">
+                                <label class="px-4 py-2.5 bg-ios-green hover:bg-ios-green/90 text-white rounded-xl text-xs font-bold shadow-lg shadow-ios-green/20 flex items-center gap-1.5 cursor-pointer transition-all">
+                                    <i data-lucide="upload" class="w-4 h-4"></i> Chọn File Excel & Cập Nhật Lịch
+                                    <input type="file" onchange="importScheduleExcel(event)" accept=".xlsx, .xls, .csv" class="hidden">
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -1206,6 +1234,16 @@
             document.getElementById('schedule-filter-date').value = todayDefault;
             document.getElementById('current-date-str').innerText = new Date().toLocaleDateString('vi-VN');
 
+            // Khởi tạo mặc định khoảng ngày upload lịch phân ca (Từ ngày hiện tại đến +6 ngày)
+            const startInput = document.getElementById('upload-sched-start-date');
+            const endInput = document.getElementById('upload-sched-end-date');
+            if (startInput && endInput) {
+                startInput.value = todayDefault;
+                const endD = new Date(todayDefault);
+                endD.setDate(endD.getDate() + 6);
+                endInput.value = endD.toISOString().split('T')[0];
+            }
+
             renderLoginQuickUsers();
             updateUserProfileUI();
             renderAll();
@@ -1214,6 +1252,24 @@
                 window.initCloudSync();
             }
         };
+
+        function syncUploadEndDate() {
+            const startVal = document.getElementById('upload-sched-start-date')?.value;
+            const endInput = document.getElementById('upload-sched-end-date');
+            if (startVal && endInput) {
+                const endD = new Date(startVal);
+                endD.setDate(endD.getDate() + 6);
+                endInput.value = endD.toISOString().split('T')[0];
+            }
+        }
+
+        function clearScheduleDateFilter() {
+            const filterEl = document.getElementById('schedule-filter-date');
+            if (filterEl) {
+                filterEl.value = '';
+                renderScheduleTable();
+            }
+        }
 
         function renderLoginQuickUsers() {
             const container = document.getElementById('login-quick-users');
@@ -1596,16 +1652,30 @@
         function importScheduleExcel(event) {
             const file = event.target.files[0];
             if (!file) return;
+
+            const startDateStr = document.getElementById('upload-sched-start-date')?.value || todayDefault;
+            const endDateStr = document.getElementById('upload-sched-end-date')?.value || startDateStr;
+
+            if (startDateStr > endDateStr) {
+                showToast("Ngày bắt đầu không được lớn hơn ngày kết thúc!", "error");
+                event.target.value = '';
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                     const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                    const baseDate = new Date(document.getElementById('schedule-filter-date')?.value || todayDefault);
-                    let count = 0;
+                    const baseDate = new Date(startDateStr);
+
+                    const newEntries = [];
+                    const affectedDates = new Set();
 
                     json.forEach(row => {
-                        const staffName = row["Tên Nhân Viên"] || row["Họ Tên Nhân Viên"] || Object.values(row)[0];
+                        const staffName = String(row["Tên Nhân Viên"] || row["Họ Tên Nhân Viên"] || Object.values(row)[0] || "").trim();
+                        if (!staffName) return;
+
                         Object.keys(row).forEach(col => {
                             let offset = -1;
                             if (col.includes("Thứ 2")) offset = 0;
@@ -1617,31 +1687,53 @@
                             else if (col.includes("Chủ Nhật") || col.includes("CN")) offset = 6;
 
                             if (offset >= 0) {
-                                const code = String(row[col] || "").trim().toUpperCase();
-                                let shift = "";
-                                if (code.startsWith("M")) shift = "Ca Sáng";
-                                else if (code.startsWith("E")) shift = "Ca Chiều";
-                                else if (code.startsWith("N")) shift = "Ca Đêm";
+                                const d = new Date(baseDate);
+                                d.setDate(baseDate.getDate() + offset);
+                                const targetDateStr = d.toISOString().split('T')[0];
 
-                                if (shift) {
-                                    const d = new Date(baseDate);
-                                    d.setDate(baseDate.getDate() + offset);
-                                    appState.schedule.unshift({
-                                        id: "SCH-" + Date.now() + Math.random(),
-                                        date: d.toISOString().split('T')[0],
-                                        shift,
-                                        staffName,
-                                        note: `Mã ca: ${code}`
-                                    });
-                                    count++;
+                                // Chỉ xử lý những ngày nằm trong khoảng [Từ ngày -> Đến ngày] đã chọn
+                                if (targetDateStr >= startDateStr && targetDateStr <= endDateStr) {
+                                    affectedDates.add(targetDateStr);
+
+                                    const code = String(row[col] || "").trim().toUpperCase();
+                                    let shift = "";
+                                    if (code.startsWith("M")) shift = "Ca Sáng";
+                                    else if (code.startsWith("E")) shift = "Ca Chiều";
+                                    else if (code.startsWith("N")) shift = "Ca Đêm";
+
+                                    if (shift) {
+                                        newEntries.push({
+                                            id: "SCH-" + Date.now() + "-" + Math.floor(Math.random() * 100000),
+                                            date: targetDateStr,
+                                            shift,
+                                            staffName,
+                                            note: `Mã ca: ${code}`
+                                        });
+                                    }
                                 }
                             }
                         });
                     });
+
+                    // Xóa toàn bộ lịch phân ca cũ của các ngày nằm trong khoảng được upload để tránh trùng lặp
+                    const beforeCount = appState.schedule.length;
+                    appState.schedule = appState.schedule.filter(s => !(s.date >= startDateStr && s.date <= endDateStr && affectedDates.has(s.date)));
+                    const removedOldCount = beforeCount - appState.schedule.length;
+
+                    // Thêm lịch mới vào
+                    appState.schedule.unshift(...newEntries);
+
+                    // Chuyển bộ lọc ngày về ngày bắt đầu để người dùng thấy ngay kết quả
+                    const schedFilter = document.getElementById('schedule-filter-date');
+                    if (schedFilter) schedFilter.value = startDateStr;
+
                     saveState();
-                    showToast(`Đã tải lên ${count} ca trực theo quy tắc M/E/N!`);
+                    showToast(`Đã xóa ${removedOldCount} ca cũ và cập nhật ${newEntries.length} ca mới (${startDateStr} -> ${endDateStr})!`);
+                    event.target.value = '';
                 } catch (err) {
+                    console.error(err);
                     showToast("File Excel không đúng định dạng!", "error");
+                    event.target.value = '';
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -1676,16 +1768,24 @@
 
         function handleScheduleFormSubmit(e) {
             e.preventDefault();
+            const date = document.getElementById('sched-date').value;
+            const shift = document.getElementById('sched-shift').value;
+            const staffName = document.getElementById('sched-staff-name').value;
+            const note = document.getElementById('sched-note').value;
+
+            // Xóa lịch cũ trùng ngày + ca + tên nhân viên (nếu có) trước khi thêm mới để tránh trùng lặp
+            appState.schedule = appState.schedule.filter(s => !(s.date === date && s.shift === shift && s.staffName === staffName));
+
             appState.schedule.unshift({
                 id: "SCH-" + Date.now(),
-                date: document.getElementById('sched-date').value,
-                shift: document.getElementById('sched-shift').value,
-                staffName: document.getElementById('sched-staff-name').value,
-                note: document.getElementById('sched-note').value
+                date,
+                shift,
+                staffName,
+                note
             });
             closeModal('modal-schedule');
             saveState();
-            showToast("Đã thêm lịch phân ca!");
+            showToast("Đã cập nhật lịch phân ca!");
         }
 
         function deleteSchedule(id) {
