@@ -249,6 +249,13 @@
 
             <!-- Header Action Controls -->
             <div class="flex items-center space-x-2">
+                <!-- Quick Search Button on Header -->
+                <button onclick="openQuickSearchModal()" class="px-3 py-1.5 rounded-full bg-slate-200/70 dark:bg-slate-800/80 hover:bg-ios-blue/15 hover:text-ios-blue text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all flex items-center gap-1.5 border border-slate-300/60 dark:border-slate-700" title="Tìm kiếm nhanh công việc (Ctrl + K)">
+                    <i data-lucide="search" class="w-4 h-4 text-ios-blue"></i>
+                    <span class="hidden sm:inline">Tìm nhanh</span>
+                    <kbd class="hidden lg:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 text-slate-400">Ctrl+K</kbd>
+                </button>
+
                 <div class="hidden sm:flex items-center space-x-2 bg-slate-200/60 dark:bg-slate-800/60 px-3 py-1.5 rounded-full text-xs font-medium">
                     <i data-lucide="user-cog" class="w-3.5 h-3.5 text-ios-blue"></i>
                     <span id="header-user-name">Nguyễn Văn A</span>
@@ -362,8 +369,11 @@
         <!-- Main Content Area -->
         <main class="flex-1 relative min-w-0">
 
-            <!-- Floating Quick Entry Plus Button -->
-            <div class="fixed bottom-20 md:bottom-8 right-6 z-40">
+            <!-- Floating Quick Search & Quick Entry Buttons -->
+            <div class="fixed bottom-20 md:bottom-8 right-6 z-40 flex flex-col items-center gap-3">
+                <button onclick="openQuickSearchModal()" class="w-12 h-12 rounded-full glass-panel border border-slate-300 dark:border-slate-700 text-ios-blue hover:bg-ios-blue hover:text-white flex items-center justify-center shadow-xl transform hover:scale-105 active:scale-95 transition-all" title="Tìm kiếm nhanh công việc (Ctrl + K)">
+                    <i data-lucide="search" class="w-5 h-5"></i>
+                </button>
                 <button onclick="openAddTaskModal()" class="w-14 h-14 rounded-full bg-ios-blue hover:bg-ios-blue/90 text-white flex items-center justify-center shadow-2xl shadow-ios-blue/40 transform hover:scale-105 active:scale-95 transition-all" title="Thêm công việc nhanh">
                     <i data-lucide="plus" class="w-7 h-7"></i>
                 </button>
@@ -515,6 +525,7 @@
                             <tbody id="tasks-table-tbody" class="divide-y divide-slate-200/50 dark:divide-slate-800/50"></tbody>
                         </table>
                     </div>
+                    <div id="tasks-load-more-bar" class="flex items-center justify-between pt-2 text-xs text-slate-500"></div>
 
                     <!-- Inline Excel-style Quick Task Entry -->
                     <div class="pt-6 border-t border-slate-200/50 dark:border-slate-800/50 space-y-3">
@@ -617,6 +628,33 @@
                     <div class="space-y-2">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">Ghi Chú Bàn Giao & Vật Tư Chìa Khóa</label>
                         <textarea id="handover-general-notes" rows="3" class="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs" placeholder="Nhập ghi chú bàn giao ca..."></textarea>
+                    </div>
+
+                    <!-- Lịch Sử Bàn Giao Ca Trong 1 Tháng (30 Ngày Gần Nhất) -->
+                    <div class="pt-6 border-t border-slate-200/60 dark:border-slate-800/60 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h3 class="font-bold text-sm flex items-center gap-2 text-ios-orange">
+                                    <i data-lucide="history" class="w-4 h-4"></i> Lịch Sử Chi Tiết Bàn Giao Ca (Lưu Tự Động 30 Ngày Gần Nhất)
+                                </h3>
+                                <p class="text-[11px] text-slate-500">Dữ liệu bàn giao cũ hơn 30 ngày được hệ thống tự động xóa bỏ để tối ưu tốc độ.</p>
+                            </div>
+                            <span id="handover-history-count-badge" class="px-2.5 py-1 rounded-full bg-ios-orange/10 text-ios-orange font-bold text-[11px]">0 bản ghi</span>
+                        </div>
+                        <div class="overflow-x-auto max-h-96">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-200/60 dark:bg-slate-800/60 uppercase font-semibold sticky top-0">
+                                    <tr>
+                                        <th class="p-3 rounded-l-xl">Ngày / Giờ Bàn Giao</th>
+                                        <th class="p-3">Ca Bàn Giao</th>
+                                        <th class="p-3">Người Giao &rarr; Người Nhận</th>
+                                        <th class="p-3">Checklist Kiểm Tra</th>
+                                        <th class="p-3 rounded-r-xl">Ghi Chú Chi Tiết</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="handover-history-tbody" class="divide-y divide-slate-200/50 dark:divide-slate-800/50"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -753,6 +791,7 @@
                                 <tbody id="report-status-tasks-tbody" class="divide-y divide-slate-200/40 dark:divide-slate-800/40"></tbody>
                             </table>
                         </div>
+                        <div id="report-tasks-load-more-bar" class="flex items-center justify-between pt-2 text-xs text-slate-500"></div>
                     </div>
 
                     <div class="space-y-3 pt-2 border-t border-slate-200/50 dark:border-slate-800/50">
@@ -1119,93 +1158,38 @@
         </div>
     </div>
 
-    <!-- 7. No-Terminal Publish & Firebase Cloud Sync Modal -->
-    <div id="modal-share" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 p-4">
-        <div class="glass-card w-full max-w-2xl p-6 rounded-3xl shadow-2xl space-y-4 transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800/50 pb-3">
-                <h3 class="font-bold text-base flex items-center gap-2">
-                    <i data-lucide="rocket" class="w-5 h-5 text-ios-blue"></i> Xuất Bản Web Online (Không Cần Chạy Terminal)
-                </h3>
-                <button onclick="closeModal('modal-share')" class="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <!-- 8. Quick Task Search Modal (Spotlight Style) -->
+    <div id="modal-quick-search" class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 p-4 pt-12 md:pt-20">
+        <div class="glass-card w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden transform scale-95 transition-transform duration-200">
+            <!-- Search Input Bar -->
+            <div class="p-4 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center gap-3 bg-white/50 dark:bg-slate-900/50">
+                <i data-lucide="search" class="w-5 h-5 text-ios-blue shrink-0"></i>
+                <input type="text" id="quick-search-modal-input" oninput="renderQuickSearchResults()" placeholder="Nhập số phòng (VD: 302), khu vực, nội dung sự cố hoặc tên nhân viên..." class="w-full bg-transparent text-sm font-medium focus:outline-none">
+                <button onclick="clearQuickSearchInput()" class="px-2 py-1 rounded-lg text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Xóa</button>
+                <button onclick="closeModal('modal-quick-search')" class="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
-            <div class="space-y-4 text-xs">
-                <div class="p-3.5 rounded-2xl bg-ios-green/10 border border-ios-green/20 flex items-start gap-3">
-                    <i data-lucide="check-circle-2" class="w-5 h-5 text-ios-green shrink-0 mt-0.5"></i>
-                    <div class="space-y-1">
-                        <div class="font-bold text-ios-green">Cơ sở dữ liệu Firebase (<code class="font-mono">dutylogbook-2df88</code>) đã được nhúng trực tiếp!</div>
-                        <p class="text-slate-600 dark:text-slate-300">Vì mã kết nối tới Database Firebase của bạn đã nằm sẵn bên trong file <code class="font-bold">index.html</code>, bạn <strong>KHÔNG CẦN DÙNG TERMINAL</strong>. Dù bạn mở file này ở bất kỳ đâu hoặc kéo-thả lên bất kỳ trang tạo link miễn phí nào dưới đây, mọi dữ liệu vẫn đổ thẳng về Firebase <code class="font-bold">dutylogbook-2df88</code> của bạn!</p>
-                    </div>
+
+            <!-- Quick Filter Chips -->
+            <div class="px-4 py-2.5 bg-slate-100/70 dark:bg-slate-800/50 border-b border-slate-200/50 dark:border-slate-800/50 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="text-[10px] font-bold uppercase text-slate-400 mr-1">Lọc nhanh:</span>
+                    <button type="button" onclick="setQuickSearchFilter('ALL')" id="qs-chip-ALL" class="px-2.5 py-1 rounded-full font-bold text-[11px] bg-ios-blue text-white">Tất cả</button>
+                    <button type="button" onclick="setQuickSearchFilter('Chưa hoàn thành')" id="qs-chip-PENDING" class="px-2.5 py-1 rounded-full font-semibold text-[11px] bg-white dark:bg-slate-800 text-ios-red border border-ios-red/30">Đang tồn đọng</button>
+                    <button type="button" onclick="setQuickSearchFilter('Sự cố đổi phòng')" id="qs-chip-ROOMCHANGE" class="px-2.5 py-1 rounded-full font-semibold text-[11px] bg-white dark:bg-slate-800 text-ios-purple border border-ios-purple/30">Đổi phòng</button>
+                    <button type="button" onclick="setQuickSearchFilter('Hoàn thành')" id="qs-chip-DONE" class="px-2.5 py-1 rounded-full font-semibold text-[11px] bg-white dark:bg-slate-800 text-ios-green border border-ios-green/30">Đã hoàn thành</button>
                 </div>
+                <span id="quick-search-count" class="text-[11px] font-bold text-slate-500">0 kết quả</span>
+            </div>
 
-                <!-- Step 1: Download Ready-to-Use index.html -->
-                <div class="p-4 rounded-2xl bg-ios-blue/10 border border-ios-blue/30 space-y-3">
-                    <div class="font-bold text-ios-blue text-sm flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-full bg-ios-blue text-white flex items-center justify-center text-xs">1</span>
-                        Tải File Web Đã Gắn Sẵn Firebase Của Bạn Về Máy
-                    </div>
-                    <p class="text-slate-600 dark:text-slate-300">Nhấn nút bên dưới để tải file <code class="font-bold">index.html</code> (đã tích hợp sẵn cấu hình <code class="font-bold">dutylogbook-2df88</code> của bạn):</p>
-                    <button onclick="downloadStandaloneApp('index.html')" class="w-full py-3 px-4 rounded-xl bg-ios-blue text-white font-bold text-sm shadow-lg shadow-ios-blue/30 flex items-center justify-center gap-2 hover:bg-ios-blue/90 transition-all">
-                        <i data-lucide="download" class="w-5 h-5"></i> Bấm Để Tải File index.html Về Máy
-                    </button>
-                </div>
+            <!-- Results List -->
+            <div id="quick-search-results-list" class="max-h-[60vh] overflow-y-auto divide-y divide-slate-200/50 dark:divide-slate-800/50 p-2"></div>
 
-                <!-- Step 2: Drag & Drop on Browser (Zero Terminal) -->
-                <div class="p-4 rounded-2xl bg-slate-100/90 dark:bg-slate-800/60 space-y-3 border border-slate-200/60 dark:border-slate-700/60">
-                    <div class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-full bg-ios-orange text-white flex items-center justify-center text-xs">2</span>
-                        Lấy Link Web Online Chỉ Bằng Kéo - Thả Trên Trình Duyệt (Không Cần Terminal)
-                    </div>
-                    <p class="text-slate-600 dark:text-slate-300">Chọn 1 trong 3 cách hoàn toàn bằng chuột trên trình duyệt dưới đây:</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-                        <!-- Option A: Tiiny.host -->
-                        <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex flex-col justify-between space-y-2">
-                            <div class="space-y-1">
-                                <span class="px-2 py-0.5 rounded bg-ios-green/10 text-ios-green font-bold text-[10px]">Dễ nhất (10 giây)</span>
-                                <h4 class="font-bold text-xs">Cách A: Tiiny.host</h4>
-                                <p class="text-[11px] text-slate-500">Mở trang web, kéo file <code class="font-bold">index.html</code> vừa tải thả vào ô trên màn hình là có ngay đường link gửi cho anh em!</p>
-                            </div>
-                            <a href="https://tiiny.host/" target="_blank" class="w-full py-2 rounded-lg bg-ios-green text-white font-bold text-center flex items-center justify-center gap-1 hover:opacity-90">
-                                Mở Tiiny.host <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                            </a>
-                        </div>
-
-                        <!-- Option B: Netlify Drop -->
-                        <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex flex-col justify-between space-y-2">
-                            <div class="space-y-1">
-                                <span class="px-2 py-0.5 rounded bg-ios-teal/10 text-ios-teal font-bold text-[10px]">Miễn phí vĩnh viễn</span>
-                                <h4 class="font-bold text-xs">Cách B: Netlify Drop</h4>
-                                <p class="text-[11px] text-slate-500">Bỏ file <code class="font-bold">index.html</code> vào 1 thư mục (folder) trên máy, rồi kéo cả thư mục đó thả vào trang Netlify Drop.</p>
-                            </div>
-                            <a href="https://app.netlify.com/drop" target="_blank" class="w-full py-2 rounded-lg bg-ios-teal text-white font-bold text-center flex items-center justify-center gap-1 hover:opacity-90">
-                                Mở Netlify Drop <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                            </a>
-                        </div>
-
-                        <!-- Option C: Google Cloud Shell in Browser -->
-                        <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex flex-col justify-between space-y-2">
-                            <div class="space-y-1">
-                                <span class="px-2 py-0.5 rounded bg-ios-orange/10 text-ios-orange font-bold text-[10px]">Chính chủ Google</span>
-                                <h4 class="font-bold text-xs">Cách C: Gửi trực tiếp qua Zalo</h4>
-                                <p class="text-[11px] text-slate-500">Gửi thẳng file <code class="font-bold">index.html</code> qua Zalo/Email. Thành viên bấm mở file trên máy tính/điện thoại là tự đồng bộ Firebase!</p>
-                            </div>
-                            <button onclick="downloadStandaloneApp('SoTrucCa_Resort.html')" class="w-full py-2 rounded-lg bg-ios-orange text-white font-bold text-center flex items-center justify-center gap-1 hover:opacity-90">
-                                Tải Bản Gửi Zalo <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 3: Important Firebase Realtime Database Rule Reminder -->
-                <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
-                    <div class="font-bold text-amber-600 dark:text-amber-400 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4"></i> Kiểm tra quyền đọc/ghi trên Firebase Console (Chỉ làm 1 lần trên Web)</span>
-                        <a href="https://console.firebase.google.com/project/dutylogbook-2df88/database/dutylogbook-2df88-default-rtdb/rules" target="_blank" class="px-2.5 py-1 rounded-lg bg-amber-500 text-white font-bold text-[11px] flex items-center gap-1 hover:opacity-90">
-                            Bấm mở trang Rules <i data-lucide="external-link" class="w-3 h-3"></i>
-                        </a>
-                    </div>
-                    <p class="text-slate-600 dark:text-slate-300 text-[11px]">Bấm vào nút màu vàng bên trên để mở trang <strong>Rules</strong> của dự án <code class="font-bold">dutylogbook-2df88</code> trên web, đảm bảo nội dung là <code class="font-mono font-bold text-emerald-600 dark:text-emerald-400">{ "rules": { ".read": true, ".write": true } }</code> rồi nhấn <strong>Publish</strong> để mọi thiết bị đều lưu được dữ liệu.</p>
-                </div>
+            <!-- Footer Hint -->
+            <div class="px-4 py-2.5 bg-slate-100/80 dark:bg-slate-900/60 border-t border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between text-[11px] text-slate-400">
+                <span>Mẹo: Bấm <kbd class="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">Ctrl + K</kbd> ở bất kỳ đâu để mở tìm kiếm nhanh</span>
+                <button onclick="closeModal('modal-quick-search'); switchView('tasks');" class="text-ios-blue font-bold hover:underline">Mở bảng công việc đầy đủ &rarr;</button>
             </div>
         </div>
     </div>
@@ -1273,7 +1257,7 @@
                 { id: "TMP-4", title: "Bàn giao bộ đàm, chìa khóa kỹ thuật và dụng cụ đo", required: false }
             ],
             handoverLogs: [
-                { id: "HO-1", date: todayDefault, shift: "Ca Sáng", fromStaff: "Nguyễn Văn A", receiver: "Trần Văn B", notes: "Hệ thống trung tâm ổn định, lưu ý theo dõi phòng 302 đang chờ vật tư.", items: {} }
+                { id: "HO-1", date: todayDefault, time: "14:02", shift: "Ca Sáng", fromStaff: "Nguyễn Văn A", receiver: "Lê Văn C", notes: "Hệ thống trung tâm ổn định, lưu ý theo dõi phòng 302 đang chờ vật tư.", checklistDetails: ["[ĐẠT] Kiểm tra hệ thống điện trung tâm & Máy phát dự phòng", "[ĐẠT] Kiểm tra áp suất hệ thống bơm nước & Heatpump", "[ĐẠT] Kiểm tra hệ thống Chiller điều hòa trung tâm", "[ĐẠT] Bàn giao bộ đàm, chìa khóa kỹ thuật và dụng cụ đo"] }
             ],
             users: [
                 { id: "USR-001", name: "Nguyễn Văn A", username: "admin", password: "123456", role: "Admin", status: "Hoạt động" },
@@ -1283,6 +1267,26 @@
         };
 
         let pendingActionCallback = null;
+        window.tasksDisplayLimit = 50;
+        window.reportTasksDisplayLimit = 50;
+
+        // Tự động xóa lịch sử bàn giao ca cũ hơn 30 ngày (1 tháng) để làm nhẹ hệ thống
+        function pruneOldHandoverLogs() {
+            if (!Array.isArray(appState.handoverLogs)) {
+                appState.handoverLogs = [];
+                return false;
+            }
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - 30);
+            const cutoffStr = getLocalTodayStr(cutoffDate);
+
+            const beforeLen = appState.handoverLogs.length;
+            appState.handoverLogs = appState.handoverLogs.filter(log => {
+                const logDate = log.date || todayDefault;
+                return logDate >= cutoffStr;
+            });
+            return appState.handoverLogs.length !== beforeLen;
+        }
 
         // Tính thời điểm kết thúc của ca đang trực (Date object)
         function getShiftEndDateTime(shiftName, shiftDateStr) {
@@ -1478,6 +1482,7 @@
             appState.tasks = cloudState.tasks || appState.tasks;
             appState.handoverTemplates = cloudState.handoverTemplates || appState.handoverTemplates;
             appState.handoverLogs = cloudState.handoverLogs || appState.handoverLogs;
+            pruneOldHandoverLogs();
             if (cloudState.users && Array.isArray(cloudState.users) && cloudState.users.length > 0) {
                 appState.users = cloudState.users.map(u => {
                     let uname = u.username;
@@ -1679,10 +1684,12 @@
         }
 
         function renderAll() {
+            pruneOldHandoverLogs();
             updateCurrentShiftCardAndHandoverLock();
             renderDashboard();
             renderTasksTable();
             renderHandoverChecklist();
+            renderHandoverHistory();
             updateHandoverStaffOptions();
             renderReports();
             renderScheduleTable();
@@ -1691,6 +1698,7 @@
         }
 
         function saveState() {
+            pruneOldHandoverLogs();
             renderAll();
             if (window.pushStateToCloud) {
                 window.pushStateToCloud();
@@ -1899,6 +1907,12 @@
         }
 
         // Tasks
+        function loadMoreTasks() {
+            window.tasksDisplayLimit = (window.tasksDisplayLimit || 50) + 50;
+            renderTasksTable();
+            lucide.createIcons();
+        }
+
         function renderTasksTable() {
             const search = (document.getElementById('task-search')?.value || '').toLowerCase();
             const statusFilter = document.getElementById('task-filter-status')?.value || 'ALL';
@@ -1916,13 +1930,25 @@
                 return matchSearch && matchStatus && matchLoc;
             });
 
+            // Sắp xếp ưu tiên công việc gần nhất lên đầu
+            const sorted = [...filtered].sort((a, b) => {
+                if (a.date !== b.date) return b.date.localeCompare(a.date);
+                return String(b.id).localeCompare(String(a.id));
+            });
+
+            const limit = window.tasksDisplayLimit || 50;
+            const visibleTasks = sorted.slice(0, limit);
+
             const tbody = document.getElementById('tasks-table-tbody');
-            if (filtered.length === 0) {
+            const loadMoreBar = document.getElementById('tasks-load-more-bar');
+
+            if (sorted.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Không có công việc phát sinh hoặc tồn đọng nào trong ${filterShift === 'ALL' ? 'ngày này' : filterShift}.</td></tr>`;
+                if (loadMoreBar) loadMoreBar.innerHTML = '';
                 return;
             }
 
-            tbody.innerHTML = filtered.map(t => {
+            tbody.innerHTML = visibleTasks.map(t => {
                 const badge = t.status === 'Hoàn thành' ? 'bg-ios-green/10 text-ios-green' : (t.status === 'Sự cố đổi phòng' ? 'bg-ios-purple/10 text-ios-purple' : 'bg-ios-red/10 text-ios-red');
                 const isCarryOver = t.status !== 'Hoàn thành' && ((t.date !== filterDate) || (filterShift !== 'ALL' && t.shift !== filterShift));
                 return `
@@ -1943,6 +1969,19 @@
                     </tr>
                 `;
             }).join('');
+
+            if (loadMoreBar) {
+                if (sorted.length > visibleTasks.length) {
+                    loadMoreBar.innerHTML = `
+                        <span>Đang hiển thị <strong>${visibleTasks.length}</strong> / <strong>${sorted.length}</strong> công việc gần nhất (tối ưu chống lag)</span>
+                        <button onclick="loadMoreTasks()" class="px-3.5 py-1.5 rounded-xl bg-ios-blue/10 text-ios-blue hover:bg-ios-blue hover:text-white font-bold transition-all">
+                            Tải thêm 50 công việc cũ hơn &darr;
+                        </button>
+                    `;
+                } else {
+                    loadMoreBar.innerHTML = `<span>Đang hiển thị <strong>${visibleTasks.length}</strong> công việc gần nhất</span><span>Đã hiển thị toàn bộ danh sách</span>`;
+                }
+            }
         }
 
         function updateAssigneeDropdown() {
@@ -2389,12 +2428,61 @@
             container.innerHTML = appState.handoverTemplates.map(tmp => `
                 <label class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-800/60 cursor-pointer">
                     <div class="flex items-center space-x-3">
-                        <input type="checkbox" class="w-4 h-4 rounded text-ios-orange" checked>
+                        <input type="checkbox" data-title="${tmp.title}" class="handover-chk-item w-4 h-4 rounded text-ios-orange" checked>
                         <span class="text-xs font-semibold">${tmp.title}</span>
                     </div>
                     <span class="text-[10px] px-2 py-0.5 rounded bg-ios-orange/10 text-ios-orange font-bold">${tmp.required ? 'Mẫu Admin' : 'Thực tế'}</span>
                 </label>
             `).join('');
+        }
+
+        function renderHandoverHistory() {
+            const tbody = document.getElementById('handover-history-tbody');
+            const badge = document.getElementById('handover-history-count-badge');
+            if (!tbody) return;
+
+            pruneOldHandoverLogs();
+            const logs = [...(appState.handoverLogs || [])].reverse();
+            if (badge) badge.innerText = `${logs.length} bản ghi (30 ngày)`;
+
+            if (logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Chưa có lịch sử bàn giao ca trong 30 ngày qua.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = logs.map(log => {
+                const details = Array.isArray(log.checklistDetails) && log.checklistDetails.length > 0
+                    ? log.checklistDetails
+                    : ["Đã kiểm tra đầy đủ danh mục chuẩn"];
+                return `
+                    <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 align-top">
+                        <td class="p-3 whitespace-nowrap">
+                            <div class="font-bold text-slate-800 dark:text-slate-100">${log.date}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">Lúc: ${log.time || '--:--'}</div>
+                        </td>
+                        <td class="p-3 whitespace-nowrap">
+                            <span class="px-2.5 py-0.5 rounded-full bg-ios-orange/10 text-ios-orange font-bold text-[11px]">${log.shift}</span>
+                        </td>
+                        <td class="p-3">
+                            <div class="font-bold text-slate-800 dark:text-slate-100">${log.fromStaff}</div>
+                            <div class="text-[11px] text-ios-teal font-semibold">&rarr; Nhận: ${log.receiver}</div>
+                        </td>
+                        <td class="p-3">
+                            <details class="cursor-pointer group">
+                                <summary class="text-[11px] font-bold text-ios-blue hover:underline list-none flex items-center gap-1">
+                                    <span>Xem ${details.length} mục đã kiểm tra</span>
+                                </summary>
+                                <ul class="mt-1.5 space-y-1 text-[11px] text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 p-2 rounded-xl">
+                                    ${details.map(d => `<li>• ${d}</li>`).join('')}
+                                </ul>
+                            </details>
+                        </td>
+                        <td class="p-3 text-slate-600 dark:text-slate-300 max-w-xs">
+                            <p class="italic">"${log.notes || 'Không có ghi chú'}"</p>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function openCustomHandoverModal() {
@@ -2426,18 +2514,33 @@
             const notes = document.getElementById('handover-general-notes').value || "Đã kiểm tra đầy đủ theo danh mục.";
             const nextSession = getNextShiftSession(currentShift, currentDate);
 
+            // Thu thập chi tiết các mục checklist bàn giao
+            const checklistDetails = [];
+            document.querySelectorAll('.handover-chk-item').forEach(chk => {
+                const title = chk.getAttribute('data-title') || '';
+                if (title) {
+                    checklistDetails.push(`${chk.checked ? '[ĐẠT]' : '[CHƯA ĐẠT]'} ${title}`);
+                }
+            });
+
             document.getElementById('confirm-modal-title').innerText = "Xác Nhận Hoàn Tất Bàn Giao Ca";
             document.getElementById('confirm-modal-desc').innerText = `Xác nhận bàn giao từ [${currentShift} - ${fromStaff}] sang [${nextSession.shift} - ${receiver}]? Dữ liệu ca trực hiện tại sẽ chuyển sang ${nextSession.shift} và ẩn các việc đã hoàn thành của ca cũ.`;
 
             pendingActionCallback = () => {
+                const nowTimeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
                 appState.handoverLogs.push({
                     id: "HO-" + Date.now(),
                     date: currentDate,
+                    time: nowTimeStr,
                     shift: currentShift,
                     fromStaff,
                     receiver,
-                    notes
+                    notes,
+                    checklistDetails
                 });
+
+                // Tự động dọn dẹp các bản ghi bàn giao cũ hơn 30 ngày
+                pruneOldHandoverLogs();
 
                 // Chuyển phiên Ca Trực Hiện Tại sang Ca tiếp theo sau khi bàn giao hợp lệ
                 appState.activeShiftSession = {
@@ -2477,9 +2580,16 @@
         function selectReportStatus(status, shift = 'ALL') {
             window.reportSelectedStatus = status;
             window.reportSelectedShift = shift;
+            window.reportTasksDisplayLimit = 50;
             const shiftSelect = document.getElementById('report-shift-drill-select');
             if (shiftSelect) shiftSelect.value = shift;
             renderReports();
+        }
+
+        function loadMoreReportTasks() {
+            window.reportTasksDisplayLimit = (window.reportTasksDisplayLimit || 50) + 50;
+            renderReports();
+            lucide.createIcons();
         }
 
         function getReportPeriodRange() {
@@ -2615,7 +2725,13 @@
                 const matchSt = selectedStatus === 'ALL' || t.status === selectedStatus;
                 const matchSh = selectedShift === 'ALL' || t.shift === selectedShift;
                 return matchSt && matchSh;
+            }).sort((a, b) => {
+                if (a.date !== b.date) return b.date.localeCompare(a.date);
+                return String(b.id).localeCompare(String(a.id));
             });
+
+            const repLimit = window.reportTasksDisplayLimit || 50;
+            const visibleDrillTasks = drillTasks.slice(0, repLimit);
 
             const listTitleEl = document.getElementById('report-filtered-list-title');
             if (listTitleEl) {
@@ -2625,11 +2741,14 @@
             }
 
             const drillTbody = document.getElementById('report-status-tasks-tbody');
+            const repLoadMoreBar = document.getElementById('report-tasks-load-more-bar');
+
             if (drillTbody) {
                 if (drillTasks.length === 0) {
                     drillTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Không có công việc nào thuộc trạng thái và kỳ đã chọn.</td></tr>`;
+                    if (repLoadMoreBar) repLoadMoreBar.innerHTML = '';
                 } else {
-                    drillTbody.innerHTML = drillTasks.map(t => {
+                    drillTbody.innerHTML = visibleDrillTasks.map(t => {
                         const badge = t.status === 'Hoàn thành' ? 'bg-ios-green/10 text-ios-green' : (t.status === 'Sự cố đổi phòng' ? 'bg-ios-orange/15 text-ios-orange' : 'bg-ios-red/10 text-ios-red');
                         return `
                             <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
@@ -2647,6 +2766,19 @@
                             </tr>
                         `;
                     }).join('');
+
+                    if (repLoadMoreBar) {
+                        if (drillTasks.length > visibleDrillTasks.length) {
+                            repLoadMoreBar.innerHTML = `
+                                <span>Đang hiển thị <strong>${visibleDrillTasks.length}</strong> / <strong>${drillTasks.length}</strong> công việc gần nhất</span>
+                                <button onclick="loadMoreReportTasks()" class="px-3.5 py-1.5 rounded-xl bg-ios-purple/10 text-ios-purple hover:bg-ios-purple hover:text-white font-bold transition-all">
+                                    Tải thêm 50 công việc cũ hơn &darr;
+                                </button>
+                            `;
+                        } else {
+                            repLoadMoreBar.innerHTML = `<span>Đang hiển thị <strong>${visibleDrillTasks.length}</strong> công việc gần nhất</span><span>Đã hiển thị hết danh sách</span>`;
+                        }
+                    }
                 }
             }
 
@@ -2784,6 +2916,126 @@
         function openBackupModal() { openModal('modal-backup'); }
 
         function openShareModal() { openModal('modal-share'); }
+
+        // Quick Search Modal Logic
+        window.quickSearchStatusFilter = 'ALL';
+
+        function openQuickSearchModal() {
+            openModal('modal-quick-search');
+            const input = document.getElementById('quick-search-modal-input');
+            if (input) {
+                setTimeout(() => input.focus(), 50);
+            }
+            renderQuickSearchResults();
+        }
+
+        function clearQuickSearchInput() {
+            const input = document.getElementById('quick-search-modal-input');
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+            window.quickSearchStatusFilter = 'ALL';
+            updateQuickSearchChipsUI();
+            renderQuickSearchResults();
+        }
+
+        function setQuickSearchFilter(status) {
+            window.quickSearchStatusFilter = status;
+            updateQuickSearchChipsUI();
+            renderQuickSearchResults();
+        }
+
+        function updateQuickSearchChipsUI() {
+            const st = window.quickSearchStatusFilter || 'ALL';
+            const map = {
+                'ALL': { id: 'qs-chip-ALL', active: 'bg-ios-blue text-white', idle: 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300' },
+                'Chưa hoàn thành': { id: 'qs-chip-PENDING', active: 'bg-ios-red text-white', idle: 'bg-white dark:bg-slate-800 text-ios-red border border-ios-red/30' },
+                'Sự cố đổi phòng': { id: 'qs-chip-ROOMCHANGE', active: 'bg-ios-purple text-white', idle: 'bg-white dark:bg-slate-800 text-ios-purple border border-ios-purple/30' },
+                'Hoàn thành': { id: 'qs-chip-DONE', active: 'bg-ios-green text-white', idle: 'bg-white dark:bg-slate-800 text-ios-green border border-ios-green/30' }
+            };
+            Object.keys(map).forEach(k => {
+                const el = document.getElementById(map[k].id);
+                if (!el) return;
+                el.className = `px-2.5 py-1 rounded-full font-bold text-[11px] transition-all ${st === k ? map[k].active : map[k].idle}`;
+            });
+        }
+
+        function renderQuickSearchResults() {
+            const query = (document.getElementById('quick-search-modal-input')?.value || '').trim().toLowerCase();
+            const statusFilter = window.quickSearchStatusFilter || 'ALL';
+            const container = document.getElementById('quick-search-results-list');
+            const countEl = document.getElementById('quick-search-count');
+            if (!container) return;
+
+            const matched = appState.tasks.filter(t => {
+                const matchSt = statusFilter === 'ALL' || t.status === statusFilter;
+                if (!matchSt) return false;
+                if (!query) return true;
+                return (
+                    (t.locationDetail || '').toLowerCase().includes(query) ||
+                    (t.locationType || '').toLowerCase().includes(query) ||
+                    (t.description || '').toLowerCase().includes(query) ||
+                    (t.assignee || '').toLowerCase().includes(query) ||
+                    (t.shift || '').toLowerCase().includes(query) ||
+                    (t.date || '').toLowerCase().includes(query)
+                );
+            });
+
+            if (countEl) countEl.innerText = `${matched.length} công việc`;
+
+            const displayList = matched.slice(0, 50);
+            if (displayList.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-slate-400 space-y-2">
+                        <i data-lucide="search-x" class="w-8 h-8 mx-auto opacity-60"></i>
+                        <p class="text-xs">Không tìm thấy công việc nào khớp với từ khóa của bạn.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = displayList.map(t => {
+                const badge = t.status === 'Hoàn thành' ? 'bg-ios-green/10 text-ios-green' : (t.status === 'Sự cố đổi phòng' ? 'bg-ios-purple/10 text-ios-purple' : 'bg-ios-red/10 text-ios-red');
+                return `
+                    <div class="p-3 rounded-2xl hover:bg-slate-100/80 dark:hover:bg-slate-800/60 flex flex-wrap items-center justify-between gap-3 transition-colors text-xs">
+                        <div class="space-y-1 flex-1 min-w-[200px]">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="px-2 py-0.5 rounded bg-ios-blue/10 text-ios-blue font-bold">${t.locationDetail}</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 font-semibold">${t.locationType}</span>
+                                <span class="text-[11px] text-slate-400 font-medium">${t.date} • ${t.shift}</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${t.status}</span>
+                            </div>
+                            <p class="font-medium text-slate-700 dark:text-slate-200">${t.description}</p>
+                            <div class="text-[11px] text-slate-400">Người thực hiện: <strong class="text-slate-600 dark:text-slate-300">${t.assignee}</strong></div>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            ${t.status !== 'Hoàn thành' ? `
+                                <button onclick="closeModal('modal-quick-search'); promptChangeTaskStatus('${t.id}', 'Hoàn thành');" class="px-3 py-1.5 bg-ios-green text-white rounded-xl font-bold text-[11px] shadow-sm hover:bg-ios-green/90">
+                                    Xác nhận xong
+                                </button>
+                            ` : `
+                                <button onclick="closeModal('modal-quick-search'); promptChangeTaskStatus('${t.id}', 'Chưa hoàn thành');" class="px-2.5 py-1.5 bg-slate-200 dark:bg-slate-700 rounded-xl font-semibold text-[11px]">
+                                    Mở lại
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // Phím tắt toàn cục Ctrl + K hoặc Cmd + K để mở nhanh hộp thoại tìm kiếm công việc
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                openQuickSearchModal();
+            } else if (e.key === 'Escape') {
+                closeModal('modal-quick-search');
+            }
+        });
 
         function copyInviteInfo() {
             const input = document.getElementById('share-invite-text');
