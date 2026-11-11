@@ -1974,6 +1974,7 @@
 
             const limit = window.tasksDisplayLimit || 50;
             const visibleTasks = sorted.slice(0, limit);
+            const isAdmin = appState.currentUser && appState.currentUser.role === 'Admin';
 
             const tbody = document.getElementById('tasks-table-tbody');
             const loadMoreBar = document.getElementById('tasks-load-more-bar');
@@ -2000,7 +2001,7 @@
                         <td class="p-3"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${badge}">${t.status}</span></td>
                         <td class="p-3 text-right space-x-1">
                             ${t.status !== 'Hoàn thành' ? `<button onclick="promptChangeTaskStatus('${t.id}', 'Hoàn thành')" class="px-2.5 py-1 bg-ios-green text-white rounded-lg font-bold text-[11px]">Hoàn thành</button>` : `<button onclick="promptChangeTaskStatus('${t.id}', 'Chưa hoàn thành')" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 rounded-lg font-bold text-[11px]">Mở lại</button>`}
-                            <button onclick="deleteTask('${t.id}')" class="p-1.5 text-slate-400 hover:text-ios-red"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+                            ${isAdmin ? `<button onclick="deleteTask('${t.id}')" class="p-1.5 text-slate-400 hover:text-ios-red" title="Xóa công việc (Chỉ Admin)"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>` : ''}
                         </td>
                     </tr>
                 `;
@@ -2132,8 +2133,21 @@
         }
 
         function deleteTask(id) {
-            appState.tasks = appState.tasks.filter(t => t.id !== id);
-            saveState();
+            if (!appState.currentUser || appState.currentUser.role !== 'Admin') {
+                showToast("Nhân viên không được phép xóa công việc! Chỉ Admin mới có quyền xóa.", "error");
+                return;
+            }
+            const task = appState.tasks.find(t => t.id === id);
+            if (!task) return;
+
+            document.getElementById('confirm-modal-title').innerText = "Xác Nhận Xóa Công Việc";
+            document.getElementById('confirm-modal-desc').innerText = `Bạn có chắc chắn muốn xóa vĩnh viễn công việc tại [${task.locationDetail}]: "${task.description}" không?`;
+            pendingActionCallback = () => {
+                appState.tasks = appState.tasks.filter(t => t.id !== id);
+                saveState();
+                showToast("Đã xóa công việc!");
+            };
+            openModal('modal-confirm');
         }
 
         // Schedule & Weekly Excel Import (M/E/N rule)
