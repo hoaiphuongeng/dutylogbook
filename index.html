@@ -737,7 +737,7 @@
 
                     <!-- Thống kê số lượng và trạng thái công việc của 3 Ca (Ca Sáng, Ca Chiều, Ca Đêm) -->
                     <div class="space-y-3">
-                        <div class="flex items-center justify-between">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
                             <h3 class="font-bold text-sm flex items-center gap-2">
                                 <i data-lucide="layers" class="w-4 h-4 text-ios-teal"></i> Thống Kê Số Lượng & Trạng Thái Của 3 Ca Trực (Trong Kỳ Đã Chọn)
                             </h3>
@@ -925,6 +925,34 @@
                             </table>
                         </div>
                     </div>
+
+                    <!-- Quản lý mẫu danh mục bàn giao ca (Admin) -->
+                    <div class="space-y-3 pt-4 border-t border-slate-200/50 dark:border-slate-800/50">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h3 class="font-bold text-sm flex items-center gap-2">
+                                    <i data-lucide="clipboard-check" class="w-4 h-4 text-ios-orange"></i> Quản Lý Mẫu Danh Mục Bàn Giao Ca (Checklist Chuẩn)
+                                </h3>
+                                <p class="text-[11px] text-slate-500">Admin có thể thêm mới, sửa nội dung hoặc xóa các mục kiểm tra bàn giao ca.</p>
+                            </div>
+                            <button onclick="openAddTemplateModal()" class="px-3.5 py-2 bg-ios-orange hover:bg-ios-orange/90 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Thêm Mục Bàn Giao Chuẩn
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-200/60 dark:bg-slate-800/60 uppercase font-semibold">
+                                    <tr>
+                                        <th class="p-3 rounded-l-xl w-14">STT</th>
+                                        <th class="p-3">Nội dung hạng mục bàn giao ca</th>
+                                        <th class="p-3 w-36">Phân loại</th>
+                                        <th class="p-3 text-right rounded-r-xl w-40">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-templates-tbody" class="divide-y divide-slate-200/40 dark:divide-slate-800/40"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1104,31 +1132,39 @@
                 <p id="confirm-modal-desc" class="text-xs text-slate-500">Bạn có chắc chắn muốn thực hiện thay đổi này không?</p>
             </div>
             <div class="grid grid-cols-2 gap-3 pt-2">
-                <button onclick="cancelConfirmedAction()" class="py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-300">Hủy Bỏ</button>
-                <button onclick="executeConfirmedAction()" class="py-2.5 rounded-xl bg-ios-blue text-white text-xs font-bold shadow-md hover:bg-ios-blue/90">Xác Nhận</button>
+                <button type="button" onclick="cancelConfirmedAction()" class="py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-300">Hủy Bỏ</button>
+                <button type="button" onclick="executeConfirmedAction()" class="py-2.5 rounded-xl bg-ios-blue text-white text-xs font-bold shadow-md hover:bg-ios-blue/90">Xác Nhận</button>
             </div>
         </div>
     </div>
 
-    <!-- 5. Custom Handover Modal -->
+    <!-- 5. Add / Edit Handover Template Modal -->
     <div id="modal-custom-handover" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 p-4">
         <div class="glass-card w-full max-w-md p-6 rounded-3xl shadow-2xl space-y-4 transform scale-95 transition-transform duration-300">
             <div class="flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800/50 pb-3">
-                <h3 class="font-bold text-base flex items-center gap-2">
-                    <i data-lucide="plus-circle" class="w-5 h-5 text-ios-orange"></i> Thêm Mục Bàn Giao Thực Tế
+                <h3 id="custom-handover-modal-title" class="font-bold text-base flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-ios-orange"></i> Thêm / Sửa Mục Bàn Giao Ca
                 </h3>
-                <button onclick="closeModal('modal-custom-handover')" class="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button type="button" onclick="closeModal('modal-custom-handover')" class="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="space-y-3 text-xs">
+            <form onsubmit="handleSaveHandoverTemplate(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="custom-handover-edit-id">
                 <div>
-                    <label class="block font-bold text-slate-500 uppercase mb-1">Nội Dung Hạng Mục *</label>
-                    <input type="text" id="custom-handover-text" placeholder="Ví dụ: Kiểm tra tủ điện phòng bơm..." class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                    <label class="block font-bold text-slate-500 uppercase mb-1">Nội Dung Hạng Mục Bàn Giao *</label>
+                    <input type="text" id="custom-handover-text" required placeholder="Ví dụ: Kiểm tra tủ điện phòng bơm..." class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-ios-orange">
                 </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button onclick="closeModal('modal-custom-handover')" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-xl font-semibold">Hủy</button>
-                    <button onclick="addCustomHandoverItem()" class="px-4 py-2 bg-ios-orange text-white font-bold rounded-xl shadow-md">Thêm Vào Danh Sách</button>
+                <div>
+                    <label class="block font-bold text-slate-500 uppercase mb-1">Phân Loại Hạng Mục</label>
+                    <select id="custom-handover-required" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold">
+                        <option value="true">Mẫu Admin chuẩn (Cố định)</option>
+                        <option value="false">Mục thực tế bổ sung</option>
+                    </select>
                 </div>
-            </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-200/50 dark:border-slate-800/50">
+                    <button type="button" onclick="closeModal('modal-custom-handover')" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-xl font-semibold hover:bg-slate-300">Hủy</button>
+                    <button type="submit" class="px-5 py-2 bg-ios-orange hover:bg-ios-orange/90 text-white font-bold rounded-xl shadow-md">Lưu Xác Nhận</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -2076,9 +2112,17 @@
         }
 
         function executeConfirmedAction() {
-            if (pendingActionCallback) pendingActionCallback();
+            const callback = pendingActionCallback;
             pendingActionCallback = null;
             closeModal('modal-confirm');
+            if (typeof callback === 'function') {
+                try {
+                    callback();
+                } catch (err) {
+                    console.error("Error executing confirmed action:", err);
+                    showToast("Có lỗi xảy ra khi thực hiện thao tác!", "error");
+                }
+            }
         }
 
         function cancelConfirmedAction() {
@@ -2425,14 +2469,32 @@
 
         function renderHandoverChecklist() {
             const container = document.getElementById('handover-checklist-container');
+            if (!container) return;
+            const isAdmin = !appState.currentUser || appState.currentUser.role === 'Admin';
+
+            if (!Array.isArray(appState.handoverTemplates) || appState.handoverTemplates.length === 0) {
+                container.innerHTML = `<div class="p-4 rounded-2xl bg-slate-100/70 dark:bg-slate-800/60 text-center text-xs text-slate-400">Chưa có hạng mục bàn giao nào. Nhấn "Thêm Mục Thực Tế" để bổ sung.</div>`;
+                return;
+            }
+
             container.innerHTML = appState.handoverTemplates.map(tmp => `
-                <label class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-800/60 cursor-pointer">
-                    <div class="flex items-center space-x-3">
-                        <input type="checkbox" data-title="${tmp.title}" class="handover-chk-item w-4 h-4 rounded text-ios-orange" checked>
-                        <span class="text-xs font-semibold">${tmp.title}</span>
+                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-800/60 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors gap-3">
+                    <label class="flex items-center space-x-3 cursor-pointer flex-1 min-w-0">
+                        <input type="checkbox" data-title="${(tmp.title || '').replace(/"/g, '&quot;')}" class="handover-chk-item w-4 h-4 rounded text-ios-orange shrink-0" checked>
+                        <span class="text-xs font-semibold break-words">${tmp.title}</span>
+                    </label>
+                    <div class="flex items-center space-x-1.5 shrink-0">
+                        <span class="text-[10px] px-2 py-0.5 rounded ${tmp.required ? 'bg-ios-orange/10 text-ios-orange' : 'bg-ios-blue/10 text-ios-blue'} font-bold">${tmp.required ? 'Mẫu Admin' : 'Thực tế'}</span>
+                        ${isAdmin ? `
+                            <button type="button" onclick="openEditHandoverTemplateModal('${tmp.id}')" class="px-2 py-1 rounded-lg bg-slate-200/80 dark:bg-slate-700 hover:bg-ios-blue hover:text-white text-slate-600 dark:text-slate-200 text-[11px] font-bold transition-colors" title="Sửa mẫu này">
+                                Sửa
+                            </button>
+                            <button type="button" onclick="deleteHandoverTemplate('${tmp.id}')" class="p-1 rounded-lg text-slate-400 hover:text-ios-red transition-colors" title="Xóa mẫu này">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        ` : ''}
                     </div>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-ios-orange/10 text-ios-orange font-bold">${tmp.required ? 'Mẫu Admin' : 'Thực tế'}</span>
-                </label>
+                </div>
             `).join('');
         }
 
@@ -2486,17 +2548,91 @@
         }
 
         function openCustomHandoverModal() {
+            const titleEl = document.getElementById('custom-handover-modal-title');
+            if (titleEl) {
+                titleEl.innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-ios-orange"></i> Thêm Mục Bàn Giao Ca Mới`;
+            }
+            document.getElementById('custom-handover-edit-id').value = '';
             document.getElementById('custom-handover-text').value = '';
+            const reqSelect = document.getElementById('custom-handover-required');
+            if (reqSelect) {
+                reqSelect.value = (appState.currentUser && appState.currentUser.role === 'Admin') ? 'true' : 'false';
+            }
             openModal('modal-custom-handover');
+            setTimeout(() => {
+                document.getElementById('custom-handover-text')?.focus();
+            }, 50);
+        }
+
+        function openAddTemplateModal() {
+            openCustomHandoverModal();
+        }
+
+        function openEditHandoverTemplateModal(templateId) {
+            const item = appState.handoverTemplates.find(t => String(t.id) === String(templateId));
+            if (!item) {
+                showToast("Không tìm thấy mục bàn giao cần sửa!", "error");
+                return;
+            }
+            const titleEl = document.getElementById('custom-handover-modal-title');
+            if (titleEl) {
+                titleEl.innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-ios-blue"></i> Sửa Mẫu Danh Mục Bàn Giao Ca`;
+            }
+            document.getElementById('custom-handover-edit-id').value = item.id;
+            document.getElementById('custom-handover-text').value = item.title || '';
+            const reqSelect = document.getElementById('custom-handover-required');
+            if (reqSelect) {
+                reqSelect.value = item.required ? 'true' : 'false';
+            }
+            openModal('modal-custom-handover');
+            setTimeout(() => {
+                document.getElementById('custom-handover-text')?.focus();
+            }, 50);
+        }
+
+        function handleSaveHandoverTemplate(e) {
+            if (e) e.preventDefault();
+            const editId = document.getElementById('custom-handover-edit-id').value.trim();
+            const text = document.getElementById('custom-handover-text').value.trim();
+            const reqVal = document.getElementById('custom-handover-required')?.value === 'true';
+
+            if (!text) {
+                showToast("Vui lòng nhập nội dung hạng mục bàn giao!", "error");
+                return;
+            }
+
+            if (editId) {
+                const idx = appState.handoverTemplates.findIndex(t => String(t.id) === String(editId));
+                if (idx !== -1) {
+                    appState.handoverTemplates[idx].title = text;
+                    appState.handoverTemplates[idx].required = reqVal;
+                }
+                closeModal('modal-custom-handover');
+                saveState();
+                showToast("Đã cập nhật mẫu bàn giao ca thành công!");
+            } else {
+                appState.handoverTemplates.push({
+                    id: "TMP-" + Date.now(),
+                    title: text,
+                    required: reqVal
+                });
+                closeModal('modal-custom-handover');
+                saveState();
+                showToast("Đã thêm mục bàn giao ca mới!");
+            }
         }
 
         function addCustomHandoverItem() {
-            const text = document.getElementById('custom-handover-text').value.trim();
-            if (!text) return;
-            appState.handoverTemplates.push({ id: "TMP-" + Date.now(), title: text, required: false });
-            closeModal('modal-custom-handover');
+            handleSaveHandoverTemplate();
+        }
+
+        function deleteHandoverTemplate(templateId) {
+            const idx = appState.handoverTemplates.findIndex(t => String(t.id) === String(templateId));
+            if (idx === -1) return;
+            const removedTitle = appState.handoverTemplates[idx].title;
+            appState.handoverTemplates.splice(idx, 1);
             saveState();
-            showToast("Đã thêm danh mục bàn giao ca!");
+            showToast(`Đã xóa mục: "${removedTitle}"`);
         }
 
         function saveHandoverLog() {
@@ -2827,21 +2963,46 @@
         // Admin Portal (Personnel & Password management)
         function renderAdminPortal() {
             const tbody = document.getElementById('admin-users-tbody');
-            tbody.innerHTML = appState.users.map(u => {
-                const displayUsername = u.username || (u.email ? u.email.split('@')[0] : 'user');
-                return `
-                <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
-                    <td class="p-3 font-bold">${u.name}</td>
-                    <td class="p-3 font-semibold text-slate-600 dark:text-slate-300">${displayUsername}</td>
-                    <td class="p-3 font-mono text-ios-blue font-bold">${u.password || '123456'}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded font-bold text-[10px] ${u.role === 'Admin' ? 'bg-ios-red/10 text-ios-red' : 'bg-ios-blue/10 text-ios-blue'}">${u.role}</span></td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${u.status === 'Hoạt động' ? 'bg-ios-green/10 text-ios-green' : 'bg-slate-200 text-slate-500'}">${u.status}</span></td>
-                    <td class="p-3 text-right space-x-1">
-                        <button onclick="openEditUserModal('${u.id}')" class="px-2.5 py-1 bg-ios-blue text-white rounded-lg text-[11px] font-bold">Sửa / Đổi MK</button>
-                        <button onclick="deleteUser('${u.id}')" class="p-1.5 text-slate-400 hover:text-ios-red"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
-                    </td>
-                </tr>
-            `}).join('');
+            if (tbody) {
+                tbody.innerHTML = appState.users.map(u => {
+                    const displayUsername = u.username || (u.email ? u.email.split('@')[0] : 'user');
+                    return `
+                    <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
+                        <td class="p-3 font-bold">${u.name}</td>
+                        <td class="p-3 font-semibold text-slate-600 dark:text-slate-300">${displayUsername}</td>
+                        <td class="p-3 font-mono text-ios-blue font-bold">${u.password || '123456'}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded font-bold text-[10px] ${u.role === 'Admin' ? 'bg-ios-red/10 text-ios-red' : 'bg-ios-blue/10 text-ios-blue'}">${u.role}</span></td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${u.status === 'Hoạt động' ? 'bg-ios-green/10 text-ios-green' : 'bg-slate-200 text-slate-500'}">${u.status}</span></td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="openEditUserModal('${u.id}')" class="px-2.5 py-1 bg-ios-blue text-white rounded-lg text-[11px] font-bold">Sửa / Đổi MK</button>
+                            <button onclick="deleteUser('${u.id}')" class="p-1.5 text-slate-400 hover:text-ios-red"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+                        </td>
+                    </tr>
+                `}).join('');
+            }
+
+            const tplTbody = document.getElementById('admin-templates-tbody');
+            if (tplTbody) {
+                if (!Array.isArray(appState.handoverTemplates) || appState.handoverTemplates.length === 0) {
+                    tplTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Chưa có mẫu bàn giao ca nào.</td></tr>`;
+                } else {
+                    tplTbody.innerHTML = appState.handoverTemplates.map((tmp, index) => `
+                        <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
+                            <td class="p-3 font-bold text-slate-400">#${index + 1}</td>
+                            <td class="p-3 font-semibold">${tmp.title}</td>
+                            <td class="p-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${tmp.required ? 'bg-ios-orange/15 text-ios-orange' : 'bg-ios-blue/15 text-ios-blue'}">
+                                    ${tmp.required ? 'Mẫu Admin chuẩn' : 'Mục thực tế'}
+                                </span>
+                            </td>
+                            <td class="p-3 text-right space-x-1">
+                                <button type="button" onclick="openEditHandoverTemplateModal('${tmp.id}')" class="px-2.5 py-1 bg-ios-blue text-white rounded-lg text-[11px] font-bold hover:bg-ios-blue/90">Sửa</button>
+                                <button type="button" onclick="deleteHandoverTemplate('${tmp.id}')" class="px-2.5 py-1 bg-ios-red/10 text-ios-red hover:bg-ios-red hover:text-white rounded-lg text-[11px] font-bold transition-colors">Xóa</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            }
         }
 
         function openAddUserModal() {
@@ -2906,10 +3067,6 @@
             }
             appState.users = appState.users.filter(u => u.id !== id);
             saveState();
-        }
-
-        function openAddTemplateModal() {
-            openCustomHandoverModal();
         }
 
         // Backup & Restore
@@ -3159,15 +3316,20 @@
             m.classList.add('opacity-0', 'pointer-events-none');
         }
 
+        let toastTimer = null;
         function showToast(msg, type = 'success') {
             const box = document.getElementById('toast-box');
+            if (!box) return;
             document.getElementById('toast-message').innerText = msg;
             const icon = document.getElementById('toast-icon');
-            icon.className = type === 'error' ? "w-5 h-5 text-ios-red" : "w-5 h-5 text-ios-green";
+            if (icon) {
+                icon.className = type === 'error' ? "w-5 h-5 text-ios-red" : "w-5 h-5 text-ios-green";
+            }
             box.classList.remove('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
-            setTimeout(() => {
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
                 box.classList.add('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
-            }, 3000);
+            }, 2500);
         }
     </script>
 </body>
