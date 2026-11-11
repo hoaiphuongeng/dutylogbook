@@ -315,13 +315,18 @@
                     <span class="text-xs font-bold uppercase text-slate-400">Ca Trực Hiện Tại</span>
                     <span id="current-shift-badge" class="px-2 py-0.5 rounded bg-ios-green/10 text-ios-green text-xs font-semibold">Ca Sáng</span>
                 </div>
-                <div class="text-xs space-y-1 text-slate-600 dark:text-slate-300">
-                    <p class="flex justify-between"><span>Trưởng ca:</span> <strong id="shift-leader-name">Nguyễn Văn A</strong></p>
-                    <p class="flex justify-between"><span>Thời gian:</span> <span>06:00 - 14:00</span></p>
-                    <p class="flex justify-between"><span>Ngày:</span> <span id="current-date-str">11/03/2026</span></p>
+                <div class="text-xs space-y-1.5 text-slate-600 dark:text-slate-300">
+                    <p class="flex justify-between"><span>Khung giờ:</span> <strong id="shift-time-range">06:00 - 14:00</strong></p>
+                    <p class="flex justify-between"><span>Ngày ca trực:</span> <span id="current-date-str" class="font-semibold">11/03/2026</span></p>
+                    <p class="flex justify-between"><span>Đồng hồ:</span> <span id="realtime-clock-str" class="font-mono font-bold text-ios-blue">--:--:--</span></p>
+                    <div class="pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+                        <span class="text-[10px] font-bold uppercase text-slate-400 block mb-1">Nhân sự trong ca:</span>
+                        <div id="current-shift-staff-list" class="space-y-1 font-medium"></div>
+                    </div>
+                    <div id="sidebar-handover-status" class="pt-1"></div>
                 </div>
                 <button onclick="switchView('handover')" class="w-full py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-semibold rounded-xl transition-colors">
-                    Đổi Ca / Bàn Giao Nhanh
+                    Đổi Ca / Bàn Giao Ca
                 </button>
             </div>
         </aside>
@@ -367,18 +372,21 @@
             <!-- ================= VIEW 1: DASHBOARD ================= -->
             <div id="view-dashboard" class="view-transition view-active space-y-6">
                 <div class="glass-card p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
-                    <h2 class="font-bold text-lg flex items-center gap-2">
-                        <i data-lucide="activity" class="w-5 h-5 text-ios-blue"></i> Tổng Quan Vận Hành Kỹ Thuật
-                    </h2>
+                    <div>
+                        <h2 class="font-bold text-lg flex items-center gap-2">
+                            <i data-lucide="activity" class="w-5 h-5 text-ios-blue"></i> Tổng Quan Vận Hành Kỹ Thuật
+                        </h2>
+                        <p class="text-[11px] text-slate-500">Chỉ hiển thị dữ liệu của <strong>ca đang chọn</strong> và các công việc <strong>tồn đọng từ ca trước</strong> chuyển sang.</p>
+                    </div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <input type="date" id="filter-date" onchange="renderDashboard(); renderTasksTable();" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium">
-                        <select id="filter-shift" onchange="renderDashboard(); renderTasksTable();" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium">
-                            <option value="ALL">Tất cả ca trực</option>
+                        <input type="date" id="filter-date" onchange="renderDashboard(); renderTasksTable(); updateCurrentShiftCard();" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium">
+                        <select id="filter-shift" onchange="renderDashboard(); renderTasksTable(); updateCurrentShiftCard();" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-ios-blue">
                             <option value="Ca Sáng">Ca Sáng (06:00 - 14:00)</option>
                             <option value="Ca Chiều">Ca Chiều (14:00 - 22:00)</option>
                             <option value="Ca Đêm">Ca Đêm (22:00 - 06:00)</option>
+                            <option value="ALL">Xem gộp cả ngày (Tất cả ca)</option>
                         </select>
-                        <button onclick="resetDashboardFilters()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-xs font-semibold rounded-xl">Đặt lại</button>
+                        <button onclick="resetDashboardFilters()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-xs font-semibold rounded-xl" title="Về ca trực hiện tại">Ca hiện tại</button>
                     </div>
                 </div>
 
@@ -567,22 +575,25 @@
                             <h2 class="font-bold text-xl flex items-center gap-2">
                                 <i data-lucide="file-text" class="w-5 h-5 text-ios-orange"></i> Biên Bản & Checklist Bàn Giao Ca
                             </h2>
-                            <p class="text-xs text-slate-500 mt-1">Tick chọn danh mục bàn giao ca theo mẫu chuẩn hoặc tự thêm hạng mục phát sinh thực tế.</p>
+                            <p class="text-xs text-slate-500 mt-1">Nhân viên chỉ được phép bàn giao khi đã qua khung giờ kết thúc của ca hiện tại.</p>
                         </div>
                         <div class="flex items-center space-x-2">
                             <button onclick="openCustomHandoverModal()" class="px-3.5 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5">
                                 <i data-lucide="plus-circle" class="w-4 h-4 text-ios-orange"></i> Thêm Mục Thực Tế
                             </button>
-                            <button onclick="saveHandoverLog()" class="px-4 py-2 bg-ios-orange hover:bg-ios-orange/90 text-white rounded-xl text-xs font-bold shadow-lg flex items-center gap-2">
+                            <button id="btn-save-handover" onclick="saveHandoverLog()" class="px-4 py-2 bg-ios-orange hover:bg-ios-orange/90 text-white rounded-xl text-xs font-bold shadow-lg flex items-center gap-2 transition-all">
                                 <i data-lucide="save" class="w-4 h-4"></i> Lưu Bàn Giao Ca
                             </button>
                         </div>
                     </div>
 
+                    <!-- Thông báo kiểm tra thời gian cho phép bàn giao ca -->
+                    <div id="handover-time-lock-banner" class="p-4 rounded-2xl border text-xs flex items-center justify-between gap-3"></div>
+
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-100/60 dark:bg-slate-800/40 p-4 rounded-2xl text-xs">
                         <div>
-                            <label class="block font-bold text-slate-500 uppercase mb-1">Ca Bàn Giao</label>
-                            <select id="handover-from-shift" onchange="updateHandoverStaffOptions()" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold">
+                            <label class="block font-bold text-slate-500 uppercase mb-1">Ca Đang Trực (Bàn Giao)</label>
+                            <select id="handover-from-shift" onchange="updateHandoverStaffOptions()" disabled class="w-full px-3 py-2 rounded-xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-bold text-ios-blue cursor-not-allowed">
                                 <option value="Ca Sáng">Ca Sáng (06:00 - 14:00)</option>
                                 <option value="Ca Chiều">Ca Chiều (14:00 - 22:00)</option>
                                 <option value="Ca Đêm">Ca Đêm (22:00 - 06:00)</option>
@@ -618,7 +629,7 @@
                             <h2 class="font-bold text-xl flex items-center gap-2">
                                 <i data-lucide="bar-chart-3" class="w-5 h-5 text-ios-purple"></i> Báo Cáo & Thống Kê Toàn Hệ Thống
                             </h2>
-                            <p class="text-xs text-slate-500 mt-1">Lưu trữ toàn bộ lịch sử công việc của tất cả các ca và ngày trước để phục vụ xuất báo cáo tổng.</p>
+                            <p class="text-xs text-slate-500 mt-1">Thống kê số lượng và trạng thái công việc của 3 ca theo Ngày, Tuần, Tháng, Năm. Bấm vào các ô trạng thái để xem danh sách công việc tương ứng.</p>
                         </div>
                         <div class="flex items-center space-x-2">
                             <button onclick="exportToExcel()" class="px-4 py-2.5 bg-ios-green hover:bg-ios-green/90 text-white rounded-xl text-xs font-bold shadow-lg flex items-center gap-2">
@@ -630,23 +641,122 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="bg-slate-100/60 dark:bg-slate-800/40 p-4 rounded-2xl">
-                            <span class="text-xs font-semibold text-slate-500">Tổng Công Việc Lưu Trữ</span>
-                            <div class="text-2xl font-bold" id="report-total-tasks">0</div>
+                    <!-- Bộ lọc thời gian Ngày / Tuần / Tháng / Năm -->
+                    <div class="p-4 rounded-2xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-4 text-xs">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-bold text-slate-500 uppercase text-[11px] mr-1">Kỳ Thống Kê:</span>
+                            <button type="button" onclick="setReportPeriod('day')" id="rep-period-day" class="rep-period-btn px-3.5 py-1.5 rounded-xl font-bold transition-all bg-ios-purple text-white shadow-sm">Theo Ngày</button>
+                            <button type="button" onclick="setReportPeriod('week')" id="rep-period-week" class="rep-period-btn px-3.5 py-1.5 rounded-xl font-bold transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Theo Tuần</button>
+                            <button type="button" onclick="setReportPeriod('month')" id="rep-period-month" class="rep-period-btn px-3.5 py-1.5 rounded-xl font-bold transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Theo Tháng</button>
+                            <button type="button" onclick="setReportPeriod('year')" id="rep-period-year" class="rep-period-btn px-3.5 py-1.5 rounded-xl font-bold transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Theo Năm</button>
+                            <button type="button" onclick="setReportPeriod('all')" id="rep-period-all" class="rep-period-btn px-3.5 py-1.5 rounded-xl font-bold transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Tất Cả</button>
                         </div>
-                        <div class="bg-slate-100/60 dark:bg-slate-800/40 p-4 rounded-2xl">
-                            <span class="text-xs font-semibold text-slate-500">Đã Hoàn Thành</span>
-                            <div class="text-2xl font-bold text-ios-green" id="report-done-tasks">0</div>
-                        </div>
-                        <div class="bg-slate-100/60 dark:bg-slate-800/40 p-4 rounded-2xl">
-                            <span class="text-xs font-semibold text-slate-500">Chưa Hoàn Thành (Tồn Đọng)</span>
-                            <div class="text-2xl font-bold text-ios-red" id="report-pending-tasks">0</div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-semibold text-slate-500">Mốc thời gian:</span>
+                            <input type="date" id="report-ref-date" onchange="renderReports()" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-bold text-ios-purple">
+                            <span id="report-period-label" class="px-2.5 py-1 rounded-lg bg-ios-purple/10 text-ios-purple font-bold text-[11px]"></span>
                         </div>
                     </div>
 
+                    <!-- Các ô trạng thái công việc (Bấm vào để lọc danh sách tương ứng) -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div onclick="selectReportStatus('ALL', 'ALL')" id="rep-card-ALL" class="cursor-pointer p-4 rounded-2xl border-2 border-ios-purple bg-ios-purple/5 hover:bg-ios-purple/10 transition-all space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Tổng Công Việc</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-ios-purple/20 text-ios-purple font-bold">Bấm để xem</span>
+                            </div>
+                            <div class="text-2xl font-bold text-ios-purple" id="report-total-tasks">0</div>
+                            <p class="text-[10px] text-slate-500">Tất cả trạng thái trong kỳ</p>
+                        </div>
+
+                        <div onclick="selectReportStatus('Hoàn thành', 'ALL')" id="rep-card-DONE" class="cursor-pointer p-4 rounded-2xl border-2 border-transparent bg-slate-100/70 dark:bg-slate-800/40 hover:border-ios-green/50 transition-all space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Đã Hoàn Thành</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-ios-green/15 text-ios-green font-bold">Bấm để xem</span>
+                            </div>
+                            <div class="text-2xl font-bold text-ios-green" id="report-done-tasks">0</div>
+                            <p class="text-[10px] text-slate-500">Công việc đã xử lý xong</p>
+                        </div>
+
+                        <div onclick="selectReportStatus('Chưa hoàn thành', 'ALL')" id="rep-card-PENDING" class="cursor-pointer p-4 rounded-2xl border-2 border-transparent bg-slate-100/70 dark:bg-slate-800/40 hover:border-ios-red/50 transition-all space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Chưa Hoàn Thành</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-ios-red/15 text-ios-red font-bold">Bấm để xem</span>
+                            </div>
+                            <div class="text-2xl font-bold text-ios-red" id="report-pending-tasks">0</div>
+                            <p class="text-[10px] text-slate-500">Công việc đang tồn đọng</p>
+                        </div>
+
+                        <div onclick="selectReportStatus('Sự cố đổi phòng', 'ALL')" id="rep-card-ROOMCHANGE" class="cursor-pointer p-4 rounded-2xl border-2 border-transparent bg-slate-100/70 dark:bg-slate-800/40 hover:border-ios-orange/50 transition-all space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Sự Cố Đổi Phòng</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-ios-orange/15 text-ios-orange font-bold">Bấm để xem</span>
+                            </div>
+                            <div class="text-2xl font-bold text-ios-orange" id="report-roomchange-tasks">0</div>
+                            <p class="text-[10px] text-slate-500">Khách đổi phòng do kỹ thuật</p>
+                        </div>
+                    </div>
+
+                    <!-- Thống kê số lượng và trạng thái công việc của 3 Ca (Ca Sáng, Ca Chiều, Ca Đêm) -->
                     <div class="space-y-3">
-                        <h3 class="font-bold text-sm">Thống Kê Theo Nhân Sự Thực Hiện</h3>
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm flex items-center gap-2">
+                                <i data-lucide="layers" class="w-4 h-4 text-ios-teal"></i> Thống Kê Số Lượng & Trạng Thái Của 3 Ca Trực (Trong Kỳ Đã Chọn)
+                            </h3>
+                            <span class="text-[11px] text-slate-400">Bấm vào số lượng từng ô để lọc danh sách công việc</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-200/60 dark:bg-slate-800/60 uppercase font-semibold">
+                                    <tr>
+                                        <th class="p-3 rounded-l-xl">Ca Làm Việc</th>
+                                        <th class="p-3 text-center">Tổng Số Việc</th>
+                                        <th class="p-3 text-center text-ios-green">Hoàn Thành</th>
+                                        <th class="p-3 text-center text-ios-red">Chưa Hoàn Thành</th>
+                                        <th class="p-3 text-center text-ios-orange">Sự Cố Đổi Phòng</th>
+                                        <th class="p-3 text-right rounded-r-xl">Tỷ Lệ Hoàn Thành</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-shifts-summary-tbody" class="divide-y divide-slate-200/40 dark:divide-slate-800/40"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách công việc tương ứng khi bấm vào ô Trạng thái / Ca trực -->
+                    <div class="space-y-3 pt-2 border-t border-slate-200/50 dark:border-slate-800/50">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h3 class="font-bold text-sm flex items-center gap-2 text-ios-blue">
+                                <i data-lucide="list-checks" class="w-4 h-4"></i>
+                                <span id="report-filtered-list-title">Danh Sách Công Việc Tương Ứng</span>
+                            </h3>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="text-slate-500">Lọc theo ca:</span>
+                                <select id="report-shift-drill-select" onchange="selectReportStatus(window.reportSelectedStatus || 'ALL', this.value)" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-bold">
+                                    <option value="ALL">Cả 3 ca</option>
+                                    <option value="Ca Sáng">Ca Sáng</option>
+                                    <option value="Ca Chiều">Ca Chiều</option>
+                                    <option value="Ca Đêm">Ca Đêm</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto max-h-96">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-200/60 dark:bg-slate-800/60 uppercase font-semibold sticky top-0">
+                                    <tr>
+                                        <th class="p-3 rounded-l-xl">Ngày / Ca</th>
+                                        <th class="p-3">Vị Trí / Phòng</th>
+                                        <th class="p-3">Nội Dung Công Việc</th>
+                                        <th class="p-3">Nhân Sự</th>
+                                        <th class="p-3 rounded-r-xl">Trạng Thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-status-tasks-tbody" class="divide-y divide-slate-200/40 dark:divide-slate-800/40"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 pt-2 border-t border-slate-200/50 dark:border-slate-800/50">
+                        <h3 class="font-bold text-sm">Thống Kê Theo Nhân Sự Thực Hiện (Trong Kỳ)</h3>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-200/60 dark:bg-slate-800/60 uppercase font-semibold">
@@ -654,8 +764,9 @@
                                         <th class="p-3 rounded-l-xl">Nhân viên kỹ thuật</th>
                                         <th class="p-3">Tổng việc</th>
                                         <th class="p-3">Hoàn thành</th>
-                                        <th class="p-3">Tồn đọng</th>
-                                        <th class="p-3 rounded-r-xl">Tỷ lệ</th>
+                                        <th class="p-3">Chưa hoàn thành</th>
+                                        <th class="p-3">Sự cố đổi phòng</th>
+                                        <th class="p-3 rounded-r-xl">Tỷ lệ hoàn thành</th>
                                     </tr>
                                 </thead>
                                 <tbody id="report-technician-tbody" class="divide-y divide-slate-200/40 dark:divide-slate-800/40"></tbody>
@@ -1109,14 +1220,45 @@
 
     <!-- ================= APPLICATION SCRIPT ================= -->
     <script>
-        const todayDefault = new Date().toISOString().split('T')[0];
+        function getLocalTodayStr(d = new Date()) {
+            const yr = d.getFullYear();
+            const mo = String(d.getMonth() + 1).padStart(2, '0');
+            const da = String(d.getDate()).padStart(2, '0');
+            return `${yr}-${mo}-${da}`;
+        }
+
+        // Xác định ca trực theo đồng hồ thực tế khi khởi tạo lần đầu
+        function detectInitialShiftByClock(now = new Date()) {
+            const h = now.getHours();
+            if (h >= 6 && h < 14) {
+                return { shift: "Ca Sáng", date: getLocalTodayStr(now) };
+            } else if (h >= 14 && h < 22) {
+                return { shift: "Ca Chiều", date: getLocalTodayStr(now) };
+            } else {
+                // Ca Đêm: từ 22:00 hôm nay đến 06:00 sáng hôm sau
+                if (h < 6) {
+                    const prev = new Date(now);
+                    prev.setDate(prev.getDate() - 1);
+                    return { shift: "Ca Đêm", date: getLocalTodayStr(prev) };
+                }
+                return { shift: "Ca Đêm", date: getLocalTodayStr(now) };
+            }
+        }
+
+        const initialShiftInfo = detectInitialShiftByClock();
+        const todayDefault = initialShiftInfo.date;
 
         let appState = {
             currentUser: null,
+            activeShiftSession: {
+                shift: initialShiftInfo.shift,
+                date: initialShiftInfo.date
+            },
             schedule: [
                 { id: "SCH-1", date: todayDefault, shift: "Ca Sáng", staffName: "Nguyễn Văn A", note: "Mã ca: M1 (Trưởng ca)" },
                 { id: "SCH-2", date: todayDefault, shift: "Ca Sáng", staffName: "Trần Văn B", note: "Mã ca: M2" },
-                { id: "SCH-3", date: todayDefault, shift: "Ca Chiều", staffName: "Lê Văn C", note: "Mã ca: E1" }
+                { id: "SCH-3", date: todayDefault, shift: "Ca Chiều", staffName: "Lê Văn C", note: "Mã ca: E1" },
+                { id: "SCH-4", date: todayDefault, shift: "Ca Đêm", staffName: "Nguyễn Văn A", note: "Mã ca: N1" }
             ],
             tasks: [
                 { id: "TSK-101", date: todayDefault, shift: "Ca Sáng", locationType: "Phòng Khách", locationDetail: "Phòng 302", description: "Điều hòa không lạnh, dàn lạnh kêu to", assignee: "Nguyễn Văn A", status: "Chưa hoàn thành", priority: "Khẩn cấp" },
@@ -1142,6 +1284,173 @@
 
         let pendingActionCallback = null;
 
+        // Tính thời điểm kết thúc của ca đang trực (Date object)
+        function getShiftEndDateTime(shiftName, shiftDateStr) {
+            const parts = (shiftDateStr || todayDefault).split('-').map(Number);
+            const y = parts[0], m = parts[1] - 1, d = parts[2];
+            if (shiftName === 'Ca Sáng') {
+                return new Date(y, m, d, 14, 0, 0); // Kết thúc lúc 14:00 cùng ngày
+            } else if (shiftName === 'Ca Chiều') {
+                return new Date(y, m, d, 22, 0, 0); // Kết thúc lúc 22:00 cùng ngày
+            } else {
+                // Ca Đêm kết thúc lúc 06:00 sáng ngày hôm sau
+                return new Date(y, m, d + 1, 6, 0, 0);
+            }
+        }
+
+        function getNextShiftSession(shiftName, shiftDateStr) {
+            const parts = (shiftDateStr || todayDefault).split('-').map(Number);
+            const y = parts[0], m = parts[1] - 1, d = parts[2];
+            if (shiftName === 'Ca Sáng') {
+                return { shift: 'Ca Chiều', date: shiftDateStr };
+            } else if (shiftName === 'Ca Chiều') {
+                return { shift: 'Ca Đêm', date: shiftDateStr };
+            } else {
+                const nextDay = new Date(y, m, d + 1);
+                return { shift: 'Ca Sáng', date: getLocalTodayStr(nextDay) };
+            }
+        }
+
+        // Kiểm tra xem hiện tại đã qua khung giờ làm việc của ca hiện tại chưa
+        function checkCanHandoverNow() {
+            const activeShift = appState.activeShiftSession?.shift || 'Ca Sáng';
+            const activeDate = appState.activeShiftSession?.date || todayDefault;
+            const endDT = getShiftEndDateTime(activeShift, activeDate);
+            const now = new Date();
+            const diffMs = endDT.getTime() - now.getTime();
+            return {
+                allowed: now >= endDT,
+                endDT,
+                diffMs,
+                activeShift,
+                activeDate
+            };
+        }
+
+        function formatRemainingTime(ms) {
+            if (ms <= 0) return "00:00:00";
+            const totalSec = Math.floor(ms / 1000);
+            const hrs = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+            const secs = String(totalSec % 60).padStart(2, '0');
+            return `${hrs}:${mins}:${secs}`;
+        }
+
+        // Cập nhật thẻ Ca Trực Hiện Tại & trạng thái khóa bàn giao ca theo thời gian thực
+        function updateCurrentShiftCardAndHandoverLock() {
+            const status = checkCanHandoverNow();
+            const activeShift = status.activeShift;
+            const activeDate = status.activeDate;
+
+            const clockEl = document.getElementById('realtime-clock-str');
+            if (clockEl) {
+                clockEl.innerText = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+            }
+
+            const badgeEl = document.getElementById('current-shift-badge');
+            const rangeEl = document.getElementById('shift-time-range');
+            const dateEl = document.getElementById('current-date-str');
+            const staffListEl = document.getElementById('current-shift-staff-list');
+            const sidebarStatusEl = document.getElementById('sidebar-handover-status');
+
+            if (badgeEl) {
+                badgeEl.innerText = activeShift;
+                if (activeShift === 'Ca Sáng') {
+                    badgeEl.className = "px-2 py-0.5 rounded bg-ios-green/10 text-ios-green text-xs font-bold";
+                } else if (activeShift === 'Ca Chiều') {
+                    badgeEl.className = "px-2 py-0.5 rounded bg-ios-orange/10 text-ios-orange text-xs font-bold";
+                } else {
+                    badgeEl.className = "px-2 py-0.5 rounded bg-ios-indigo/10 text-ios-indigo text-xs font-bold";
+                }
+            }
+
+            if (rangeEl) {
+                rangeEl.innerText = activeShift === 'Ca Sáng' ? '06:00 - 14:00' : (activeShift === 'Ca Chiều' ? '14:00 - 22:00' : '22:00 - 06:00');
+            }
+            if (dateEl) {
+                const [y, m, d] = activeDate.split('-');
+                dateEl.innerText = `${d}/${m}/${y}`;
+            }
+
+            if (staffListEl) {
+                const staffInShift = appState.schedule.filter(s => s.date === activeDate && s.shift === activeShift);
+                if (staffInShift.length === 0) {
+                    staffListEl.innerHTML = `<div class="text-slate-400 italic text-[11px]">Chưa phân ca (${appState.currentUser?.name || 'Nguyễn Văn A'})</div>`;
+                } else {
+                    staffListEl.innerHTML = staffInShift.map(s => `
+                        <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg text-[11px]">
+                            <span class="font-bold text-slate-800 dark:text-slate-100">${s.staffName}</span>
+                            <span class="text-[10px] text-ios-teal font-semibold">${s.note || s.shift}</span>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            const endClockStr = status.endDT.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            if (sidebarStatusEl) {
+                if (status.allowed) {
+                    sidebarStatusEl.innerHTML = `
+                        <div class="px-2.5 py-1.5 rounded-xl bg-ios-green/10 border border-ios-green/30 text-ios-green text-[11px] font-bold flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-ios-green animate-ping"></span>
+                            Đã hết giờ ${activeShift} - Được phép bàn giao ca!
+                        </div>
+                    `;
+                } else {
+                    sidebarStatusEl.innerHTML = `
+                        <div class="px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[11px] font-semibold">
+                            Đang trong ca (Mở bàn giao lúc ${endClockStr} - còn ${formatRemainingTime(status.diffMs)})
+                        </div>
+                    `;
+                }
+            }
+
+            // Cập nhật Banner & nút Lưu Bàn Giao Ca ở màn hình Bàn Giao
+            const bannerEl = document.getElementById('handover-time-lock-banner');
+            const btnSave = document.getElementById('btn-save-handover');
+            const nextInfo = getNextShiftSession(activeShift, activeDate);
+
+            if (bannerEl) {
+                if (status.allowed) {
+                    bannerEl.className = "p-4 rounded-2xl border bg-ios-green/10 border-ios-green/30 text-ios-green text-xs flex flex-wrap items-center justify-between gap-3";
+                    bannerEl.innerHTML = `
+                        <div class="flex items-center gap-2.5">
+                            <i data-lucide="unlock" class="w-5 h-5 shrink-0"></i>
+                            <div>
+                                <div class="font-bold text-sm">Đã qua giờ kết thúc ${activeShift} (${endClockStr}) — Cho phép Bàn giao ca!</div>
+                                <p class="text-[11px] opacity-90">Sau khi nhấn "Lưu Bàn Giao Ca", hệ thống sẽ chuyển phiên trực hiện tại sang <strong>${nextInfo.shift} (${nextInfo.date})</strong>.</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-ios-green text-white font-bold text-[11px]">Sẵn sàng bàn giao</span>
+                    `;
+                } else {
+                    bannerEl.className = "p-4 rounded-2xl border bg-ios-red/10 border-ios-red/30 text-ios-red text-xs flex flex-wrap items-center justify-between gap-3";
+                    bannerEl.innerHTML = `
+                        <div class="flex items-center gap-2.5">
+                            <i data-lucide="clock" class="w-5 h-5 shrink-0"></i>
+                            <div>
+                                <div class="font-bold text-sm">Chưa đến giờ bàn giao ca! (${activeShift} kết thúc lúc ${endClockStr})</div>
+                                <p class="text-[11px] opacity-90">Nhân viên không được phép bàn giao sớm hơn giờ kết thúc ca. Vui lòng chờ hết khung giờ làm việc của ca hiện tại.</p>
+                            </div>
+                        </div>
+                        <div class="px-3 py-1.5 rounded-xl bg-ios-red text-white font-mono font-bold text-xs shadow-sm">
+                            Còn lại: ${formatRemainingTime(status.diffMs)}
+                        </div>
+                    `;
+                }
+            }
+
+            if (btnSave) {
+                if (status.allowed) {
+                    btnSave.disabled = false;
+                    btnSave.className = "px-4 py-2 bg-ios-orange hover:bg-ios-orange/90 text-white rounded-xl text-xs font-bold shadow-lg flex items-center gap-2 transition-all cursor-pointer";
+                } else {
+                    btnSave.disabled = true;
+                    btnSave.className = "px-4 py-2 bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-xl text-xs font-bold flex items-center gap-2 cursor-not-allowed opacity-75";
+                }
+            }
+        }
+
         window.updateSyncIndicator = function(mode) {
             const dot = document.getElementById('sync-status-dot');
             const txt = document.getElementById('sync-status-text');
@@ -1157,6 +1466,14 @@
 
         window.applyCloudData = function(cloudState) {
             const currentActiveUser = appState.currentUser;
+            if (cloudState.activeShiftSession && cloudState.activeShiftSession.shift && cloudState.activeShiftSession.date) {
+                const prevShift = appState.activeShiftSession?.shift;
+                const prevDate = appState.activeShiftSession?.date;
+                appState.activeShiftSession = cloudState.activeShiftSession;
+                if (prevShift !== appState.activeShiftSession.shift || prevDate !== appState.activeShiftSession.date) {
+                    syncFiltersToActiveShiftSession();
+                }
+            }
             appState.schedule = cloudState.schedule || appState.schedule;
             appState.tasks = cloudState.tasks || appState.tasks;
             appState.handoverTemplates = cloudState.handoverTemplates || appState.handoverTemplates;
@@ -1185,6 +1502,7 @@
 
         window.pushStateToCloud = async function() {
             const syncPayload = {
+                activeShiftSession: appState.activeShiftSession,
                 schedule: appState.schedule,
                 tasks: appState.tasks,
                 handoverTemplates: appState.handoverTemplates,
@@ -1220,10 +1538,27 @@
             }
         };
 
+        function syncFiltersToActiveShiftSession() {
+            const activeShift = appState.activeShiftSession?.shift || 'Ca Sáng';
+            const activeDate = appState.activeShiftSession?.date || todayDefault;
+
+            const fDate = document.getElementById('filter-date');
+            const fShift = document.getElementById('filter-shift');
+            if (fDate) fDate.value = activeDate;
+            if (fShift) fShift.value = activeShift;
+
+            const quickShift = document.getElementById('quick-inline-shift');
+            if (quickShift) quickShift.value = activeShift;
+
+            const hoShift = document.getElementById('handover-from-shift');
+            if (hoShift) hoShift.value = activeShift;
+        }
+
         window.onload = function() {
-            document.getElementById('filter-date').value = todayDefault;
-            document.getElementById('schedule-filter-date').value = todayDefault;
-            document.getElementById('current-date-str').innerText = new Date().toLocaleDateString('vi-VN');
+            syncFiltersToActiveShiftSession();
+            document.getElementById('schedule-filter-date').value = appState.activeShiftSession.date;
+            const repDateEl = document.getElementById('report-ref-date');
+            if (repDateEl) repDateEl.value = appState.activeShiftSession.date;
 
             // Khởi tạo mặc định khoảng ngày upload lịch phân ca (Từ ngày hiện tại đến +6 ngày)
             const startInput = document.getElementById('upload-sched-start-date');
@@ -1239,10 +1574,73 @@
             updateUserProfileUI();
             renderAll();
 
+            // Bộ đếm thời gian thực mỗi giây để kiểm tra khóa/mở khóa bàn giao ca
+            setInterval(() => {
+                updateCurrentShiftCardAndHandoverLock();
+            }, 1000);
+
             if (window.initCloudSync) {
                 window.initCloudSync();
             }
         };
+
+        // Xác định ca trực dựa theo khung giờ thực tế
+        function getShiftByCurrentTime() {
+            const hour = new Date().getHours();
+            if (hour >= 6 && hour < 14) {
+                return { shift: "Ca Sáng", timeRange: "06:00 - 14:00", badgeClass: "bg-ios-green/10 text-ios-green" };
+            } else if (hour >= 14 && hour < 22) {
+                return { shift: "Ca Chiều", timeRange: "14:00 - 22:00", badgeClass: "bg-ios-orange/10 text-ios-orange" };
+            } else {
+                return { shift: "Ca Đêm", timeRange: "22:00 - 06:00", badgeClass: "bg-ios-indigo/10 text-ios-indigo" };
+            }
+        }
+
+        function updateCurrentShiftCard() {
+            const autoInfo = getShiftByCurrentTime();
+            const selectedShift = document.getElementById('filter-shift')?.value;
+            const activeShift = (selectedShift && selectedShift !== 'ALL') ? selectedShift : autoInfo.shift;
+            const activeDate = document.getElementById('filter-date')?.value || todayDefault;
+
+            let timeRange = "06:00 - 14:00";
+            let badgeClass = "bg-ios-green/10 text-ios-green";
+            if (activeShift === "Ca Chiều") {
+                timeRange = "14:00 - 22:00";
+                badgeClass = "bg-ios-orange/10 text-ios-orange";
+            } else if (activeShift === "Ca Đêm") {
+                timeRange = "22:00 - 06:00";
+                badgeClass = "bg-ios-indigo/10 text-ios-indigo";
+            }
+
+            const badgeEl = document.getElementById('current-shift-badge');
+            const timeEl = document.getElementById('current-shift-time');
+            const dateEl = document.getElementById('current-date-str');
+            const staffListEl = document.getElementById('current-shift-staff-list');
+
+            if (badgeEl) {
+                badgeEl.className = `px-2 py-0.5 rounded text-xs font-semibold ${badgeClass}`;
+                badgeEl.innerText = activeShift;
+            }
+            if (timeEl) timeEl.innerText = timeRange;
+            if (dateEl) {
+                const parts = activeDate.split('-');
+                dateEl.innerText = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : activeDate;
+            }
+
+            if (staffListEl) {
+                const shiftStaff = appState.schedule.filter(s => s.date === activeDate && s.shift === activeShift);
+                if (shiftStaff.length === 0) {
+                    staffListEl.innerHTML = `<div class="text-[11px] text-slate-400 italic">Chưa phân ca (${appState.currentUser?.name || 'Admin'})</div>`;
+                } else {
+                    staffListEl.innerHTML = shiftStaff.map(s => `
+                        <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg">
+                            <span class="font-bold text-slate-800 dark:text-slate-100">${s.staffName}</span>
+                            <span class="text-[10px] text-ios-blue font-semibold">${s.note ? s.note.replace('Mã ca: ', '') : s.shift}</span>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
 
         function syncUploadEndDate() {
             const startVal = document.getElementById('upload-sched-start-date')?.value;
@@ -1281,6 +1679,7 @@
         }
 
         function renderAll() {
+            updateCurrentShiftCardAndHandoverLock();
             renderDashboard();
             renderTasksTable();
             renderHandoverChecklist();
@@ -1408,31 +1807,42 @@
             if (!appState.currentUser) return;
             document.getElementById('header-user-name').innerText = appState.currentUser.name;
             document.getElementById('header-user-role').innerText = appState.currentUser.role;
-            document.getElementById('shift-leader-name').innerText = appState.currentUser.name;
         }
 
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
         }
 
+        // Kiểm tra công việc có được hiển thị ở ca hiện tại không:
+        // - Nếu đã hoàn thành: chỉ hiển thị nếu thuộc đúng ngày & ca đang chọn.
+        // - Nếu chưa hoàn thành (tồn đọng / sự cố đổi phòng): luôn hiển thị chuyển tiếp sang ca sau cho đến khi xử lý xong.
+        function isTaskVisibleInActiveShift(task, filterDate, filterShift) {
+            const isSameDate = filterDate ? task.date === filterDate : true;
+            const isSameShift = (filterShift && filterShift !== 'ALL') ? task.shift === filterShift : true;
+            const isCurrentShiftTask = isSameDate && isSameShift;
+
+            if (task.status === 'Hoàn thành') {
+                return isCurrentShiftTask;
+            }
+            return true;
+        }
+
         // Dashboard
         function renderDashboard() {
-            const filterDate = document.getElementById('filter-date')?.value || '';
-            const filterShift = document.getElementById('filter-shift')?.value || 'ALL';
+            const activeDate = appState.activeShiftSession?.date || todayDefault;
+            const activeShift = appState.activeShiftSession?.shift || 'Ca Sáng';
+            const filterDate = document.getElementById('filter-date')?.value || activeDate;
+            const filterShift = document.getElementById('filter-shift')?.value || activeShift;
 
-            let currentPeriodTasks = appState.tasks.filter(t => {
-                if (filterDate && t.date !== filterDate) return false;
-                if (filterShift !== 'ALL' && t.shift !== filterShift) return false;
-                return true;
-            });
+            // Công việc phát sinh trong ca hiện tại hoặc công việc còn tồn đọng từ ca trước chuyển sang
+            const activeDashboardTasks = appState.tasks.filter(t => isTaskVisibleInActiveShift(t, filterDate, filterShift));
 
-            // All pending tasks accumulate across shifts/days until completed
             const allPendingTasks = appState.tasks.filter(t => t.status !== 'Hoàn thành');
 
-            const guestIssues = currentPeriodTasks.filter(t => t.locationType === 'Phòng Khách');
-            const publicIssues = currentPeriodTasks.filter(t => t.locationType === 'Khu Công Cộng');
-            const completedTasks = currentPeriodTasks.filter(t => t.status === 'Hoàn thành');
-            const roomChanges = currentPeriodTasks.filter(t => t.status === 'Sự cố đổi phòng');
+            const guestIssues = activeDashboardTasks.filter(t => t.locationType === 'Phòng Khách');
+            const publicIssues = activeDashboardTasks.filter(t => t.locationType === 'Khu Công Cộng');
+            const completedTasks = activeDashboardTasks.filter(t => t.status === 'Hoàn thành');
+            const roomChanges = activeDashboardTasks.filter(t => t.status === 'Sự cố đổi phòng');
 
             document.getElementById('stat-guest-issues').innerText = guestIssues.length;
             document.getElementById('stat-guest-done').innerText = guestIssues.filter(t => t.status === 'Hoàn thành').length;
@@ -1442,17 +1852,20 @@
             document.getElementById('stat-pending').innerText = allPendingTasks.length;
             document.getElementById('stat-room-changes').innerText = roomChanges.length;
 
-            const rate = currentPeriodTasks.length > 0 ? Math.round((completedTasks.length / currentPeriodTasks.length) * 100) : 0;
+            const rate = activeDashboardTasks.length > 0 ? Math.round((completedTasks.length / activeDashboardTasks.length) * 100) : 0;
             document.getElementById('stat-rate').innerText = rate + '%';
 
             const backlogTbody = document.getElementById('dashboard-backlog-tbody');
             if (allPendingTasks.length === 0) {
                 backlogTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Không có lỗi tồn đọng!</td></tr>`;
             } else {
-                backlogTbody.innerHTML = allPendingTasks.map(t => `
+                backlogTbody.innerHTML = allPendingTasks.map(t => {
+                    const isCarryOver = (t.date !== filterDate || (filterShift !== 'ALL' && t.shift !== filterShift));
+                    return `
                     <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
                         <td class="p-3 font-semibold">
                             <span class="px-2 py-0.5 rounded bg-ios-blue/10 text-ios-blue">${t.locationDetail}</span>
+                            ${isCarryOver ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-ios-orange/15 text-ios-orange text-[9px] font-bold uppercase">Tồn ca trước</span>` : ''}
                             <div class="text-[10px] text-slate-400 mt-0.5">${t.date} (${t.shift})</div>
                         </td>
                         <td class="p-3">${t.description}</td>
@@ -1461,7 +1874,7 @@
                             <button onclick="promptChangeTaskStatus('${t.id}', 'Hoàn thành')" class="px-2.5 py-1 bg-ios-green text-white rounded-lg font-bold text-[11px]">Xác nhận xong</button>
                         </td>
                     </tr>
-                `).join('');
+                `}).join('');
             }
 
             const handoverSummary = document.getElementById('dashboard-handover-summary');
@@ -1480,8 +1893,7 @@
         }
 
         function resetDashboardFilters() {
-            document.getElementById('filter-date').value = todayDefault;
-            document.getElementById('filter-shift').value = 'ALL';
+            syncFiltersToActiveShiftSession();
             renderDashboard();
             renderTasksTable();
         }
@@ -1491,15 +1903,13 @@
             const search = (document.getElementById('task-search')?.value || '').toLowerCase();
             const statusFilter = document.getElementById('task-filter-status')?.value || 'ALL';
             const locationFilter = document.getElementById('task-filter-location')?.value || 'ALL';
-            const filterDate = document.getElementById('filter-date')?.value || '';
-            const filterShift = document.getElementById('filter-shift')?.value || 'ALL';
+            const filterDate = document.getElementById('filter-date')?.value || todayDefault;
+            const filterShift = document.getElementById('filter-shift')?.value || getShiftByCurrentTime().shift;
 
             const filtered = appState.tasks.filter(t => {
-                // Hide completed tasks from previous shifts/days, but keep all uncompleted tasks visible
-                if (t.status === 'Hoàn thành') {
-                    if (filterDate && t.date !== filterDate) return false;
-                    if (filterShift !== 'ALL' && t.shift !== filterShift) return false;
-                }
+                // Ẩn hoàn toàn công việc đã hoàn thành của ca trước, chỉ giữ lại việc của ca đang chọn và việc còn tồn đọng
+                if (!isTaskVisibleInActiveShift(t, filterDate, filterShift)) return false;
+
                 const matchSearch = t.locationDetail.toLowerCase().includes(search) || t.description.toLowerCase().includes(search) || t.assignee.toLowerCase().includes(search);
                 const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
                 const matchLoc = locationFilter === 'ALL' || t.locationType === locationFilter;
@@ -1508,15 +1918,20 @@
 
             const tbody = document.getElementById('tasks-table-tbody');
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Không có công việc nào trong ca.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Không có công việc phát sinh hoặc tồn đọng nào trong ${filterShift === 'ALL' ? 'ngày này' : filterShift}.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(t => {
                 const badge = t.status === 'Hoàn thành' ? 'bg-ios-green/10 text-ios-green' : (t.status === 'Sự cố đổi phòng' ? 'bg-ios-purple/10 text-ios-purple' : 'bg-ios-red/10 text-ios-red');
+                const isCarryOver = t.status !== 'Hoàn thành' && ((t.date !== filterDate) || (filterShift !== 'ALL' && t.shift !== filterShift));
                 return `
                     <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
-                        <td class="p-3"><strong>${t.shift}</strong><div class="text-[10px] text-slate-400">${t.date}</div></td>
+                        <td class="p-3">
+                            <strong>${t.shift}</strong>
+                            <div class="text-[10px] text-slate-400">${t.date}</div>
+                            ${isCarryOver ? `<span class="inline-block mt-0.5 px-1.5 py-0.5 rounded bg-ios-orange/15 text-ios-orange font-bold text-[10px]">Tồn đọng ca trước</span>` : ''}
+                        </td>
                         <td class="p-3"><span class="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700">${t.locationType}</span><div class="font-bold mt-0.5">${t.locationDetail}</div></td>
                         <td class="p-3">${t.description}</td>
                         <td class="p-3 font-medium">${t.assignee}</td>
@@ -1540,6 +1955,9 @@
 
         function openAddTaskModal() {
             document.getElementById('form-task').reset();
+            const activeShift = appState.activeShiftSession?.shift || 'Ca Sáng';
+            const shiftSelect = document.getElementById('task-shift');
+            if (shiftSelect) shiftSelect.value = activeShift;
             toggleLocationFields();
             updateAssigneeDropdown();
             openModal('modal-task');
@@ -1914,21 +2332,14 @@
             const receiverLabel = document.getElementById('handover-receiver-label');
             if (!fromShiftEl || !fromStaffSelect || !receiverSelect) return;
 
-            const currentShift = fromShiftEl.value;
-            const currentDate = document.getElementById('filter-date')?.value || todayDefault;
+            // Luôn lấy theo Ca Trực Hiện Tại đang hoạt động
+            const currentShift = appState.activeShiftSession?.shift || 'Ca Sáng';
+            const currentDate = appState.activeShiftSession?.date || todayDefault;
+            fromShiftEl.value = currentShift;
 
-            let nextShift = 'Ca Chiều';
-            let nextDate = currentDate;
-            if (currentShift === 'Ca Sáng') {
-                nextShift = 'Ca Chiều';
-            } else if (currentShift === 'Ca Chiều') {
-                nextShift = 'Ca Đêm';
-            } else if (currentShift === 'Ca Đêm') {
-                nextShift = 'Ca Sáng';
-                const d = new Date(currentDate);
-                d.setDate(d.getDate() + 1);
-                nextDate = d.toISOString().split('T')[0];
-            }
+            const nextSession = getNextShiftSession(currentShift, currentDate);
+            const nextShift = nextSession.shift;
+            const nextDate = nextSession.date;
 
             if (receiverLabel) {
                 receiverLabel.innerText = `NV Nhận Ca (${nextShift}${nextDate !== currentDate ? ' ' + nextDate : ''})`;
@@ -2001,56 +2412,284 @@
         }
 
         function saveHandoverLog() {
-            appState.handoverLogs.push({
-                id: "HO-" + Date.now(),
-                date: todayDefault,
-                shift: document.getElementById('handover-from-shift').value,
-                fromStaff: document.getElementById('handover-staff-name').value,
-                receiver: document.getElementById('handover-receiver-name').value,
-                notes: document.getElementById('handover-general-notes').value || "Đã kiểm tra đầy đủ theo danh mục."
-            });
-            saveState();
-            showToast("Đã lưu biên bản bàn giao ca!");
+            const lockCheck = checkCanHandoverNow();
+            if (!lockCheck.allowed) {
+                const endTimeStr = lockCheck.endDT.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+                showToast(`Chưa thể bàn giao! ${lockCheck.activeShift} chỉ được phép bàn giao từ ${endTimeStr} trở đi (còn ${formatRemainingTime(lockCheck.diffMs)}).`, "error");
+                return;
+            }
+
+            const currentShift = lockCheck.activeShift;
+            const currentDate = lockCheck.activeDate;
+            const fromStaff = document.getElementById('handover-staff-name').value;
+            const receiver = document.getElementById('handover-receiver-name').value;
+            const notes = document.getElementById('handover-general-notes').value || "Đã kiểm tra đầy đủ theo danh mục.";
+            const nextSession = getNextShiftSession(currentShift, currentDate);
+
+            document.getElementById('confirm-modal-title').innerText = "Xác Nhận Hoàn Tất Bàn Giao Ca";
+            document.getElementById('confirm-modal-desc').innerText = `Xác nhận bàn giao từ [${currentShift} - ${fromStaff}] sang [${nextSession.shift} - ${receiver}]? Dữ liệu ca trực hiện tại sẽ chuyển sang ${nextSession.shift} và ẩn các việc đã hoàn thành của ca cũ.`;
+
+            pendingActionCallback = () => {
+                appState.handoverLogs.push({
+                    id: "HO-" + Date.now(),
+                    date: currentDate,
+                    shift: currentShift,
+                    fromStaff,
+                    receiver,
+                    notes
+                });
+
+                // Chuyển phiên Ca Trực Hiện Tại sang Ca tiếp theo sau khi bàn giao hợp lệ
+                appState.activeShiftSession = {
+                    shift: nextSession.shift,
+                    date: nextSession.date
+                };
+
+                document.getElementById('handover-general-notes').value = '';
+                syncFiltersToActiveShiftSession();
+                saveState();
+                switchView('dashboard');
+                showToast(`Đã bàn giao ca thành công! Hệ thống đã chuyển sang ${nextSession.shift} (${nextSession.date}).`);
+            };
+            openModal('modal-confirm');
         }
 
-        // Reports
+        // Reports & Multi-period Shift Statistics
+        window.reportPeriodMode = 'day';
+        window.reportSelectedStatus = 'ALL';
+        window.reportSelectedShift = 'ALL';
+
+        function setReportPeriod(mode) {
+            window.reportPeriodMode = mode;
+            const modes = ['day', 'week', 'month', 'year', 'all'];
+            modes.forEach(m => {
+                const btn = document.getElementById(`rep-period-${m}`);
+                if (!btn) return;
+                if (m === mode) {
+                    btn.className = "rep-period-btn px-3.5 py-1.5 rounded-xl font-bold transition-all bg-ios-purple text-white shadow-sm";
+                } else {
+                    btn.className = "rep-period-btn px-3.5 py-1.5 rounded-xl font-bold transition-all bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300";
+                }
+            });
+            renderReports();
+        }
+
+        function selectReportStatus(status, shift = 'ALL') {
+            window.reportSelectedStatus = status;
+            window.reportSelectedShift = shift;
+            const shiftSelect = document.getElementById('report-shift-drill-select');
+            if (shiftSelect) shiftSelect.value = shift;
+            renderReports();
+        }
+
+        function getReportPeriodRange() {
+            const mode = window.reportPeriodMode || 'day';
+            const refStr = document.getElementById('report-ref-date')?.value || todayDefault;
+            const parts = refStr.split('-').map(Number);
+            const refDate = new Date(parts[0], parts[1] - 1, parts[2]);
+
+            if (mode === 'day') {
+                return {
+                    start: refStr,
+                    end: refStr,
+                    label: `Ngày ${String(parts[2]).padStart(2, '0')}/${String(parts[1]).padStart(2, '0')}/${parts[0]}`
+                };
+            } else if (mode === 'week') {
+                // Tính từ Thứ 2 đến Chủ Nhật của tuần chứa ngày đang chọn
+                const dayOfWeek = refDate.getDay(); // 0 (CN) -> 6 (T7)
+                const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                const monday = new Date(refDate);
+                monday.setDate(refDate.getDate() + diffToMonday);
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                const sStr = getLocalTodayStr(monday);
+                const eStr = getLocalTodayStr(sunday);
+                return {
+                    start: sStr,
+                    end: eStr,
+                    label: `Tuần: ${sStr} → ${eStr}`
+                };
+            } else if (mode === 'month') {
+                const yr = parts[0];
+                const mo = String(parts[1]).padStart(2, '0');
+                const lastDay = new Date(yr, parts[1], 0).getDate();
+                return {
+                    start: `${yr}-${mo}-01`,
+                    end: `${yr}-${mo}-${String(lastDay).padStart(2, '0')}`,
+                    label: `Tháng ${mo}/${yr}`
+                };
+            } else if (mode === 'year') {
+                const yr = parts[0];
+                return {
+                    start: `${yr}-01-01`,
+                    end: `${yr}-12-31`,
+                    label: `Năm ${yr}`
+                };
+            } else {
+                return {
+                    start: '0000-01-01',
+                    end: '9999-12-31',
+                    label: 'Toàn bộ lịch sử'
+                };
+            }
+        }
+
         function renderReports() {
-            const total = appState.tasks.length;
-            const done = appState.tasks.filter(t => t.status === 'Hoàn thành').length;
-            const pending = total - done;
+            const range = getReportPeriodRange();
+            const labelEl = document.getElementById('report-period-label');
+            if (labelEl) labelEl.innerText = range.label;
+
+            // Lọc các công việc nằm trong kỳ đã chọn (Ngày / Tuần / Tháng / Năm / Tất cả)
+            const periodTasks = appState.tasks.filter(t => t.date >= range.start && t.date <= range.end);
+
+            const total = periodTasks.length;
+            const done = periodTasks.filter(t => t.status === 'Hoàn thành').length;
+            const pending = periodTasks.filter(t => t.status === 'Chưa hoàn thành').length;
+            const roomChange = periodTasks.filter(t => t.status === 'Sự cố đổi phòng').length;
+
             document.getElementById('report-total-tasks').innerText = total;
             document.getElementById('report-done-tasks').innerText = done;
             document.getElementById('report-pending-tasks').innerText = pending;
+            const rcEl = document.getElementById('report-roomchange-tasks');
+            if (rcEl) rcEl.innerText = roomChange;
 
+            // Highlight ô trạng thái đang được chọn
+            const statusCardMap = {
+                'ALL': 'rep-card-ALL',
+                'Hoàn thành': 'rep-card-DONE',
+                'Chưa hoàn thành': 'rep-card-PENDING',
+                'Sự cố đổi phòng': 'rep-card-ROOMCHANGE'
+            };
+            Object.keys(statusCardMap).forEach(stKey => {
+                const card = document.getElementById(statusCardMap[stKey]);
+                if (!card) return;
+                if (window.reportSelectedStatus === stKey) {
+                    card.className = "cursor-pointer p-4 rounded-2xl border-2 border-ios-blue bg-ios-blue/10 shadow-md transition-all space-y-1";
+                } else {
+                    card.className = "cursor-pointer p-4 rounded-2xl border-2 border-transparent bg-slate-100/70 dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-600 transition-all space-y-1";
+                }
+            });
+
+            // 1. Bảng thống kê 3 ca trực (Ca Sáng, Ca Chiều, Ca Đêm) trong kỳ
+            const shifts = ['Ca Sáng', 'Ca Chiều', 'Ca Đêm'];
+            const shiftTbody = document.getElementById('report-shifts-summary-tbody');
+            if (shiftTbody) {
+                shiftTbody.innerHTML = shifts.map(sh => {
+                    const shTasks = periodTasks.filter(t => t.shift === sh);
+                    const shTotal = shTasks.length;
+                    const shDone = shTasks.filter(t => t.status === 'Hoàn thành').length;
+                    const shPending = shTasks.filter(t => t.status === 'Chưa hoàn thành').length;
+                    const shRC = shTasks.filter(t => t.status === 'Sự cố đổi phòng').length;
+                    const shRate = shTotal > 0 ? Math.round((shDone / shTotal) * 100) : 0;
+                    const isSelectedShift = window.reportSelectedShift === sh;
+
+                    return `
+                        <tr class="${isSelectedShift ? 'bg-ios-blue/5 dark:bg-ios-blue/10' : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/50'} transition-colors">
+                            <td class="p-3 font-bold">
+                                <button onclick="selectReportStatus('ALL', '${sh}')" class="px-2.5 py-1 rounded-lg bg-ios-teal/10 text-ios-teal hover:bg-ios-teal hover:text-white font-bold transition-colors">
+                                    ${sh}
+                                </button>
+                            </td>
+                            <td class="p-3 text-center">
+                                <button onclick="selectReportStatus('ALL', '${sh}')" class="px-2.5 py-1 rounded-lg font-bold bg-slate-200/70 dark:bg-slate-700 hover:bg-ios-purple hover:text-white transition-colors">${shTotal}</button>
+                            </td>
+                            <td class="p-3 text-center">
+                                <button onclick="selectReportStatus('Hoàn thành', '${sh}')" class="px-2.5 py-1 rounded-lg font-bold bg-ios-green/10 text-ios-green hover:bg-ios-green hover:text-white transition-colors">${shDone}</button>
+                            </td>
+                            <td class="p-3 text-center">
+                                <button onclick="selectReportStatus('Chưa hoàn thành', '${sh}')" class="px-2.5 py-1 rounded-lg font-bold bg-ios-red/10 text-ios-red hover:bg-ios-red hover:text-white transition-colors">${shPending}</button>
+                            </td>
+                            <td class="p-3 text-center">
+                                <button onclick="selectReportStatus('Sự cố đổi phòng', '${sh}')" class="px-2.5 py-1 rounded-lg font-bold bg-ios-orange/10 text-ios-orange hover:bg-ios-orange hover:text-white transition-colors">${shRC}</button>
+                            </td>
+                            <td class="p-3 text-right font-bold">${shRate}%</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // 2. Bảng danh sách công việc tương ứng khi bấm vào ô Trạng thái / Ca trực
+            const selectedStatus = window.reportSelectedStatus || 'ALL';
+            const selectedShift = window.reportSelectedShift || 'ALL';
+            const drillTasks = periodTasks.filter(t => {
+                const matchSt = selectedStatus === 'ALL' || t.status === selectedStatus;
+                const matchSh = selectedShift === 'ALL' || t.shift === selectedShift;
+                return matchSt && matchSh;
+            });
+
+            const listTitleEl = document.getElementById('report-filtered-list-title');
+            if (listTitleEl) {
+                const stText = selectedStatus === 'ALL' ? 'Tất Cả Trạng Thái' : `Trạng Thái: ${selectedStatus}`;
+                const shText = selectedShift === 'ALL' ? 'Cả 3 Ca' : selectedShift;
+                listTitleEl.innerText = `Danh Sách Công Việc [${stText} — ${shText}] (${drillTasks.length} công việc)`;
+            }
+
+            const drillTbody = document.getElementById('report-status-tasks-tbody');
+            if (drillTbody) {
+                if (drillTasks.length === 0) {
+                    drillTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Không có công việc nào thuộc trạng thái và kỳ đã chọn.</td></tr>`;
+                } else {
+                    drillTbody.innerHTML = drillTasks.map(t => {
+                        const badge = t.status === 'Hoàn thành' ? 'bg-ios-green/10 text-ios-green' : (t.status === 'Sự cố đổi phòng' ? 'bg-ios-orange/15 text-ios-orange' : 'bg-ios-red/10 text-ios-red');
+                        return `
+                            <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
+                                <td class="p-3">
+                                    <span class="font-bold">${t.shift}</span>
+                                    <div class="text-[10px] text-slate-400">${t.date}</div>
+                                </td>
+                                <td class="p-3">
+                                    <span class="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700">${t.locationType}</span>
+                                    <div class="font-bold mt-0.5">${t.locationDetail}</div>
+                                </td>
+                                <td class="p-3">${t.description}</td>
+                                <td class="p-3 font-medium">${t.assignee}</td>
+                                <td class="p-3"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${badge}">${t.status}</span></td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // 3. Thống kê theo nhân sự trong kỳ đã chọn
             const map = {};
-            appState.tasks.forEach(t => {
-                if (!map[t.assignee]) map[t.assignee] = { total: 0, done: 0, pending: 0 };
+            periodTasks.forEach(t => {
+                if (!map[t.assignee]) map[t.assignee] = { total: 0, done: 0, pending: 0, roomChange: 0 };
                 map[t.assignee].total++;
                 if (t.status === 'Hoàn thành') map[t.assignee].done++;
+                else if (t.status === 'Sự cố đổi phòng') map[t.assignee].roomChange++;
                 else map[t.assignee].pending++;
             });
 
-            document.getElementById('report-technician-tbody').innerHTML = Object.keys(map).map(name => {
-                const s = map[name];
-                const rate = Math.round((s.done / s.total) * 100);
-                return `
-                    <tr>
-                        <td class="p-3 font-bold">${name}</td>
-                        <td class="p-3">${s.total}</td>
-                        <td class="p-3 text-ios-green font-bold">${s.done}</td>
-                        <td class="p-3 text-ios-red font-bold">${s.pending}</td>
-                        <td class="p-3 font-bold">${rate}%</td>
-                    </tr>
-                `;
-            }).join('');
+            const techKeys = Object.keys(map);
+            const techTbody = document.getElementById('report-technician-tbody');
+            if (techKeys.length === 0) {
+                techTbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Chưa có dữ liệu nhân sự trong kỳ này.</td></tr>`;
+            } else {
+                techTbody.innerHTML = techKeys.map(name => {
+                    const s = map[name];
+                    const rate = s.total > 0 ? Math.round((s.done / s.total) * 100) : 0;
+                    return `
+                        <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
+                            <td class="p-3 font-bold">${name}</td>
+                            <td class="p-3 font-semibold">${s.total}</td>
+                            <td class="p-3 text-ios-green font-bold">${s.done}</td>
+                            <td class="p-3 text-ios-red font-bold">${s.pending}</td>
+                            <td class="p-3 text-ios-orange font-bold">${s.roomChange}</td>
+                            <td class="p-3 font-bold">${rate}%</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
         }
 
         function exportToExcel() {
+            const range = getReportPeriodRange();
+            const periodTasks = appState.tasks.filter(t => t.date >= range.start && t.date <= range.end);
             const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(appState.tasks);
+            const ws = XLSX.utils.json_to_sheet(periodTasks);
             XLSX.utils.book_append_sheet(wb, ws, "BaoCaoCongViec");
-            XLSX.writeFile(wb, `BaoCao_SoTrucCa_${todayDefault}.xlsx`);
-            showToast("Đã xuất báo cáo Excel!");
+            XLSX.writeFile(wb, `BaoCao_SoTrucCa_${range.start}_${range.end}.xlsx`);
+            showToast(`Đã xuất báo cáo Excel (${range.label})!`);
         }
 
         // Admin Portal (Personnel & Password management)
