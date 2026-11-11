@@ -582,19 +582,19 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-100/60 dark:bg-slate-800/40 p-4 rounded-2xl text-xs">
                         <div>
                             <label class="block font-bold text-slate-500 uppercase mb-1">Ca Bàn Giao</label>
-                            <select id="handover-from-shift" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+                            <select id="handover-from-shift" onchange="updateHandoverStaffOptions()" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold">
                                 <option value="Ca Sáng">Ca Sáng (06:00 - 14:00)</option>
                                 <option value="Ca Chiều">Ca Chiều (14:00 - 22:00)</option>
                                 <option value="Ca Đêm">Ca Đêm (22:00 - 06:00)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-500 uppercase mb-1">Nhân Viên Giao Ca</label>
-                            <input type="text" id="handover-staff-name" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700" value="Nguyễn Văn A">
+                            <label class="block font-bold text-slate-500 uppercase mb-1">Nhân Viên Giao Ca (Đi Ca Này)</label>
+                            <select id="handover-staff-name" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold"></select>
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-500 uppercase mb-1">Nhân Viên Nhận Ca</label>
-                            <input type="text" id="handover-receiver-name" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700" value="Trần Văn B">
+                            <label id="handover-receiver-label" class="block font-bold text-slate-500 uppercase mb-1">Nhân Viên Nhận Ca (Ca Tiếp Theo)</label>
+                            <select id="handover-receiver-name" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold"></select>
                         </div>
                     </div>
 
@@ -723,10 +723,10 @@
                             <thead class="bg-slate-200/60 dark:bg-slate-800/60 uppercase font-semibold">
                                 <tr>
                                     <th class="p-3 rounded-l-xl">Ngày Trực</th>
-                                    <th class="p-3">Ca Trực</th>
+                                    <th class="p-3">Ca Làm Việc (Admin Sửa Trực Tiếp)</th>
                                     <th class="p-3">Nhân Viên</th>
                                     <th class="p-3">Ghi Chú / Mã Ca</th>
-                                    <th class="p-3 text-right rounded-r-xl">Xóa</th>
+                                    <th class="p-3 text-right rounded-r-xl">Thao Tác (Admin)</th>
                                 </tr>
                             </thead>
                             <tbody id="schedule-table-tbody" class="divide-y divide-slate-200/50 dark:divide-slate-800/50"></tbody>
@@ -904,24 +904,24 @@
             </form>
         </div>
     </div>
-
-    <!-- 3. Assign Schedule Modal -->
+    <!-- 3. Assign / Edit Schedule Modal -->
     <div id="modal-schedule" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 p-4">
         <div class="glass-card w-full max-w-md p-6 rounded-3xl shadow-2xl space-y-4 transform scale-95 transition-transform duration-300">
             <div class="flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800/50 pb-3">
-                <h3 class="font-bold text-base flex items-center gap-2">
+                <h3 id="schedule-modal-title" class="font-bold text-base flex items-center gap-2">
                     <i data-lucide="calendar-plus" class="w-5 h-5 text-ios-teal"></i> Phân Ca Trực Nhân Viên
                 </h3>
                 <button onclick="closeModal('modal-schedule')" class="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <form onsubmit="handleScheduleFormSubmit(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="sched-edit-id">
                 <div>
                     <label class="block font-bold text-slate-500 uppercase mb-1">Ngày Trực *</label>
-                    <input type="date" id="sched-date" required class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+                    <input type="date" id="sched-date" required class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-500 uppercase mb-1">Ca Trực *</label>
-                    <select id="sched-shift" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+                    <select id="sched-shift" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold">
                         <option value="Ca Sáng">Ca Sáng (M)</option>
                         <option value="Ca Chiều">Ca Chiều (E)</option>
                         <option value="Ca Đêm">Ca Đêm (N)</option>
@@ -929,10 +929,10 @@
                 </div>
                 <div>
                     <label class="block font-bold text-slate-500 uppercase mb-1">Nhân Viên *</label>
-                    <select id="sched-staff-name" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"></select>
+                    <select id="sched-staff-name" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold"></select>
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-500 uppercase mb-1">Ghi Chú</label>
+                    <label class="block font-bold text-slate-500 uppercase mb-1">Ghi Chú / Mã Ca</label>
                     <input type="text" id="sched-note" placeholder="Trực chính / Hỗ trợ..." class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
@@ -943,19 +943,19 @@
         </div>
     </div>
 
-    <!-- 4. Strict Status Change Confirmation Modal -->
+    <!-- 4. Strict Status Change / Action Confirmation Modal -->
     <div id="modal-confirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 p-4">
         <div class="glass-card w-full max-w-sm p-6 rounded-3xl shadow-2xl space-y-4 text-center transform scale-95 transition-transform duration-300">
             <div class="w-12 h-12 rounded-2xl bg-ios-orange/10 text-ios-orange flex items-center justify-center mx-auto">
                 <i data-lucide="alert-circle" class="w-7 h-7"></i>
             </div>
             <div>
-                <h3 id="confirm-modal-title" class="font-bold text-base mb-1">Xác Nhận Cập Nhật Trạng Thái</h3>
-                <p id="confirm-modal-desc" class="text-xs text-slate-500">Bạn có chắc chắn muốn thay đổi trạng thái công việc này không?</p>
+                <h3 id="confirm-modal-title" class="font-bold text-base mb-1">Xác Nhận Thao Tác</h3>
+                <p id="confirm-modal-desc" class="text-xs text-slate-500">Bạn có chắc chắn muốn thực hiện thay đổi này không?</p>
             </div>
             <div class="grid grid-cols-2 gap-3 pt-2">
-                <button onclick="closeModal('modal-confirm')" class="py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-semibold">Hủy Bỏ</button>
-                <button onclick="executeConfirmedAction()" class="py-2.5 rounded-xl bg-ios-blue text-white text-xs font-bold">Xác Nhận</button>
+                <button onclick="cancelConfirmedAction()" class="py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-300">Hủy Bỏ</button>
+                <button onclick="executeConfirmedAction()" class="py-2.5 rounded-xl bg-ios-blue text-white text-xs font-bold shadow-md hover:bg-ios-blue/90">Xác Nhận</button>
             </div>
         </div>
     </div>
@@ -1284,6 +1284,7 @@
             renderDashboard();
             renderTasksTable();
             renderHandoverChecklist();
+            updateHandoverStaffOptions();
             renderReports();
             renderScheduleTable();
             renderAdminPortal();
@@ -1607,6 +1608,7 @@
         function promptChangeTaskStatus(taskId, newStatus) {
             const task = appState.tasks.find(t => t.id === taskId);
             if (!task) return;
+            document.getElementById('confirm-modal-title').innerText = "Xác Nhận Cập Nhật Trạng Thái";
             document.getElementById('confirm-modal-desc').innerText = `Xác nhận cập nhật công việc tại [${task.locationDetail}] sang trạng thái "${newStatus}"?`;
             pendingActionCallback = () => {
                 task.status = newStatus;
@@ -1620,6 +1622,12 @@
             if (pendingActionCallback) pendingActionCallback();
             pendingActionCallback = null;
             closeModal('modal-confirm');
+        }
+
+        function cancelConfirmedAction() {
+            pendingActionCallback = null;
+            closeModal('modal-confirm');
+            renderScheduleTable();
         }
 
         function deleteTask(id) {
@@ -1734,6 +1742,8 @@
             const filterDate = document.getElementById('schedule-filter-date')?.value || '';
             const list = filterDate ? appState.schedule.filter(s => s.date === filterDate) : appState.schedule;
             const tbody = document.getElementById('schedule-table-tbody');
+            const isAdmin = appState.currentUser && appState.currentUser.role === 'Admin';
+
             if (list.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Chưa có lịch phân ca trong ngày này.</td></tr>`;
                 return;
@@ -1741,50 +1751,228 @@
             tbody.innerHTML = list.map(s => `
                 <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
                     <td class="p-3 font-semibold">${s.date}</td>
-                    <td class="p-3"><span class="px-2.5 py-0.5 rounded-full bg-ios-teal/10 text-ios-teal font-bold">${s.shift}</span></td>
+                    <td class="p-3">
+                        ${isAdmin ? `
+                            <select onchange="promptInlineShiftChange('${s.id}', this.value)" class="px-2.5 py-1 rounded-xl bg-ios-teal/10 text-ios-teal font-bold border border-ios-teal/30 focus:outline-none focus:ring-2 focus:ring-ios-teal cursor-pointer text-xs">
+                                <option value="Ca Sáng" ${s.shift === 'Ca Sáng' ? 'selected' : ''}>Ca Sáng (M)</option>
+                                <option value="Ca Chiều" ${s.shift === 'Ca Chiều' ? 'selected' : ''}>Ca Chiều (E)</option>
+                                <option value="Ca Đêm" ${s.shift === 'Ca Đêm' ? 'selected' : ''}>Ca Đêm (N)</option>
+                            </select>
+                        ` : `
+                            <span class="px-2.5 py-0.5 rounded-full bg-ios-teal/10 text-ios-teal font-bold">${s.shift}</span>
+                        `}
+                    </td>
                     <td class="p-3 font-bold">${s.staffName}</td>
                     <td class="p-3 text-slate-500">${s.note || '-'}</td>
-                    <td class="p-3 text-right">
-                        <button onclick="deleteSchedule('${s.id}')" class="p-1.5 text-slate-400 hover:text-ios-red"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+                    <td class="p-3 text-right space-x-1">
+                        ${isAdmin ? `
+                            <button onclick="openEditScheduleModal('${s.id}')" class="px-2.5 py-1 rounded-lg bg-ios-blue/10 text-ios-blue hover:bg-ios-blue hover:text-white font-bold text-[11px] transition-colors" title="Sửa chi tiết ca trực">
+                                Sửa ca
+                            </button>
+                            <button onclick="promptDeleteSchedule('${s.id}')" class="p-1.5 text-slate-400 hover:text-ios-red" title="Xóa lịch ca">
+                                <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                            </button>
+                        ` : `
+                            <span class="text-[10px] text-slate-400 italic">Chỉ Admin</span>
+                        `}
                     </td>
                 </tr>
             `).join('');
+            lucide.createIcons();
+        }
+
+        function promptInlineShiftChange(schedId, newShift) {
+            if (!appState.currentUser || appState.currentUser.role !== 'Admin') {
+                showToast("Chỉ Admin mới có quyền sửa đổi trực tiếp ca làm việc!", "error");
+                renderScheduleTable();
+                return;
+            }
+            const item = appState.schedule.find(s => s.id === schedId);
+            if (!item || item.shift === newShift) return;
+
+            const oldShift = item.shift;
+            document.getElementById('confirm-modal-title').innerText = "Xác Nhận Đổi Ca Làm Việc";
+            document.getElementById('confirm-modal-desc').innerText = `Bạn có chắc chắn muốn đổi ca của nhân viên [${item.staffName}] ngày ${item.date} từ "${oldShift}" sang "${newShift}" không?`;
+
+            pendingActionCallback = () => {
+                item.shift = newShift;
+                saveState();
+                showToast(`Đã đổi ca của ${item.staffName} sang ${newShift}!`);
+            };
+            openModal('modal-confirm');
         }
 
         function openAssignScheduleModal() {
+            if (appState.currentUser && appState.currentUser.role !== 'Admin') {
+                showToast("Chỉ Admin mới có quyền phân ca hoặc sửa lịch ca!", "error");
+                return;
+            }
+            document.getElementById('schedule-modal-title').innerHTML = `<i data-lucide="calendar-plus" class="w-5 h-5 text-ios-teal"></i> Phân Ca Trực Nhân Viên`;
+            document.getElementById('sched-edit-id').value = '';
             document.getElementById('sched-date').value = document.getElementById('schedule-filter-date')?.value || todayDefault;
+            document.getElementById('sched-shift').value = 'Ca Sáng';
             document.getElementById('sched-staff-name').innerHTML = appState.users.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+            document.getElementById('sched-note').value = '';
+            openModal('modal-schedule');
+        }
+
+        function openEditScheduleModal(schedId) {
+            if (!appState.currentUser || appState.currentUser.role !== 'Admin') {
+                showToast("Chỉ Admin mới có quyền chỉnh sửa ca làm việc!", "error");
+                return;
+            }
+            const item = appState.schedule.find(s => s.id === schedId);
+            if (!item) return;
+
+            document.getElementById('schedule-modal-title').innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-ios-blue"></i> Sửa Ca Làm Việc Nhân Viên`;
+            document.getElementById('sched-edit-id').value = item.id;
+            document.getElementById('sched-date').value = item.date;
+            document.getElementById('sched-shift').value = item.shift;
+
+            const staffOptions = appState.users.map(u => u.name);
+            if (!staffOptions.includes(item.staffName)) staffOptions.unshift(item.staffName);
+            document.getElementById('sched-staff-name').innerHTML = staffOptions.map(name => `<option value="${name}" ${name === item.staffName ? 'selected' : ''}>${name}</option>`).join('');
+            document.getElementById('sched-note').value = item.note || '';
+
             openModal('modal-schedule');
         }
 
         function handleScheduleFormSubmit(e) {
             e.preventDefault();
+            if (appState.currentUser && appState.currentUser.role !== 'Admin') {
+                showToast("Chỉ Admin mới có quyền thực hiện thao tác này!", "error");
+                return;
+            }
+            const editId = document.getElementById('sched-edit-id').value;
             const date = document.getElementById('sched-date').value;
             const shift = document.getElementById('sched-shift').value;
             const staffName = document.getElementById('sched-staff-name').value;
             const note = document.getElementById('sched-note').value;
 
-            // Xóa lịch cũ trùng ngày + ca + tên nhân viên (nếu có) trước khi thêm mới để tránh trùng lặp
-            appState.schedule = appState.schedule.filter(s => !(s.date === date && s.shift === shift && s.staffName === staffName));
+            if (editId) {
+                const existing = appState.schedule.find(s => s.id === editId);
+                if (!existing) return;
 
-            appState.schedule.unshift({
-                id: "SCH-" + Date.now(),
-                date,
-                shift,
-                staffName,
-                note
-            });
-            closeModal('modal-schedule');
-            saveState();
-            showToast("Đã cập nhật lịch phân ca!");
+                closeModal('modal-schedule');
+                document.getElementById('confirm-modal-title').innerText = "Xác Nhận Lưu Thay Đổi Ca Trực";
+                document.getElementById('confirm-modal-desc').innerText = `Xác nhận cập nhật lịch trực của [${existing.staffName}] (${existing.date} - ${existing.shift}) thành [${staffName}] (${date} - ${shift})?`;
+
+                pendingActionCallback = () => {
+                    existing.date = date;
+                    existing.shift = shift;
+                    existing.staffName = staffName;
+                    existing.note = note;
+                    saveState();
+                    showToast(`Đã cập nhật lịch ca của ${staffName}!`);
+                };
+                openModal('modal-confirm');
+            } else {
+                closeModal('modal-schedule');
+                document.getElementById('confirm-modal-title').innerText = "Xác Nhận Phân Ca Mới";
+                document.getElementById('confirm-modal-desc').innerText = `Xác nhận phân công nhân viên [${staffName}] trực "${shift}" ngày ${date}?`;
+
+                pendingActionCallback = () => {
+                    appState.schedule = appState.schedule.filter(s => !(s.date === date && s.shift === shift && s.staffName === staffName));
+                    appState.schedule.unshift({
+                        id: "SCH-" + Date.now(),
+                        date,
+                        shift,
+                        staffName,
+                        note
+                    });
+                    saveState();
+                    showToast("Đã thêm lịch phân ca mới!");
+                };
+                openModal('modal-confirm');
+            }
         }
 
-        function deleteSchedule(id) {
-            appState.schedule = appState.schedule.filter(s => s.id !== id);
-            saveState();
+        function promptDeleteSchedule(id) {
+            if (!appState.currentUser || appState.currentUser.role !== 'Admin') {
+                showToast("Chỉ Admin mới có quyền xóa lịch phân ca!", "error");
+                return;
+            }
+            const item = appState.schedule.find(s => s.id === id);
+            if (!item) return;
+
+            document.getElementById('confirm-modal-title').innerText = "Xác Nhận Xóa Ca Làm Việc";
+            document.getElementById('confirm-modal-desc').innerText = `Bạn có chắc chắn muốn xóa lịch trực "${item.shift}" ngày ${item.date} của nhân viên [${item.staffName}] không?`;
+
+            pendingActionCallback = () => {
+                appState.schedule = appState.schedule.filter(s => s.id !== id);
+                saveState();
+                showToast(`Đã xóa ca trực của ${item.staffName}.`);
+            };
+            openModal('modal-confirm');
         }
 
         // Handover
+        function updateHandoverStaffOptions() {
+            const fromShiftEl = document.getElementById('handover-from-shift');
+            const fromStaffSelect = document.getElementById('handover-staff-name');
+            const receiverSelect = document.getElementById('handover-receiver-name');
+            const receiverLabel = document.getElementById('handover-receiver-label');
+            if (!fromShiftEl || !fromStaffSelect || !receiverSelect) return;
+
+            const currentShift = fromShiftEl.value;
+            const currentDate = document.getElementById('filter-date')?.value || todayDefault;
+
+            let nextShift = 'Ca Chiều';
+            let nextDate = currentDate;
+            if (currentShift === 'Ca Sáng') {
+                nextShift = 'Ca Chiều';
+            } else if (currentShift === 'Ca Chiều') {
+                nextShift = 'Ca Đêm';
+            } else if (currentShift === 'Ca Đêm') {
+                nextShift = 'Ca Sáng';
+                const d = new Date(currentDate);
+                d.setDate(d.getDate() + 1);
+                nextDate = d.toISOString().split('T')[0];
+            }
+
+            if (receiverLabel) {
+                receiverLabel.innerText = `NV Nhận Ca (${nextShift}${nextDate !== currentDate ? ' ' + nextDate : ''})`;
+            }
+
+            const currentShiftStaff = appState.schedule
+                .filter(s => s.date === currentDate && s.shift === currentShift)
+                .map(s => s.staffName);
+
+            const nextShiftStaff = appState.schedule
+                .filter(s => s.date === nextDate && s.shift === nextShift)
+                .map(s => s.staffName);
+
+            const allUserNames = appState.users.map(u => u.name);
+
+            const buildOptions = (scheduledNames, fallbackNames) => {
+                const uniqueScheduled = [...new Set(scheduledNames)];
+                let html = '';
+                if (uniqueScheduled.length > 1) {
+                    const combined = uniqueScheduled.join(', ');
+                    html += `<option value="${combined}">Cả ca: ${combined}</option>`;
+                }
+                if (uniqueScheduled.length > 0) {
+                    html += `<optgroup label="Nhân sự theo lịch phân ca">`;
+                    uniqueScheduled.forEach(name => {
+                        html += `<option value="${name}">${name} (Theo lịch ca)</option>`;
+                    });
+                    html += `</optgroup>`;
+                }
+                const others = fallbackNames.filter(n => !uniqueScheduled.includes(n));
+                if (others.length > 0) {
+                    html += `<optgroup label="Nhân sự khác">`;
+                    others.forEach(name => {
+                        html += `<option value="${name}">${name}</option>`;
+                    });
+                    html += `</optgroup>`;
+                }
+                return html;
+            };
+
+            fromStaffSelect.innerHTML = buildOptions(currentShiftStaff, allUserNames);
+            receiverSelect.innerHTML = buildOptions(nextShiftStaff, allUserNames);
+        }
+
         function renderHandoverChecklist() {
             const container = document.getElementById('handover-checklist-container');
             container.innerHTML = appState.handoverTemplates.map(tmp => `
