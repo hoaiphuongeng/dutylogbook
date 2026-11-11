@@ -205,10 +205,10 @@
 
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
                 <div class="space-y-1">
-                    <label class="block font-bold text-slate-500 uppercase tracking-wider text-[10px]">Tài khoản / Email nhân viên</label>
+                    <label class="block font-bold text-slate-500 uppercase tracking-wider text-[10px]">Tên đăng nhập</label>
                     <div class="relative">
                         <i data-lucide="user" class="absolute left-3.5 top-3 w-4 h-4 text-slate-400"></i>
-                        <input type="text" id="login-email-input" required placeholder="admin.kythuat@resort.com" value="admin.kythuat@resort.com" class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-ios-blue">
+                        <input type="text" id="login-username-input" required placeholder="Nhập tên đăng nhập (VD: admin)" value="admin" class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-ios-blue">
                     </div>
                 </div>
 
@@ -220,13 +220,20 @@
                     </div>
                 </div>
 
-                <button type="submit" class="w-full py-3.5 rounded-xl bg-ios-blue hover:bg-ios-blue/90 text-white font-bold text-sm shadow-xl shadow-ios-blue/30 transition-all flex items-center justify-center gap-2">
+                <div id="login-error-msg" class="hidden p-3 rounded-xl bg-ios-red/10 border border-ios-red/30 text-ios-red font-semibold text-center text-xs"></div>
+
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-ios-blue hover:bg-ios-blue/90 text-white font-bold text-sm shadow-xl shadow-ios-blue/30 transition-all flex items-center justify-center gap-2 cursor-pointer">
                     <i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập Hệ Thống
                 </button>
             </form>
 
-            <div class="pt-4 border-t border-slate-200/50 dark:border-slate-800/50 text-center">
-                <p class="text-[11px] text-slate-400">Tài khoản mẫu: <code class="text-ios-blue font-semibold">admin.kythuat@resort.com</code> hoặc <code class="text-ios-blue font-semibold">tran.b@resort.com</code> | MK: <code class="text-ios-blue font-semibold">123456</code></p>
+            <div class="pt-4 border-t border-slate-200/50 dark:border-slate-800/50 text-center space-y-2">
+                <p class="text-[11px] text-slate-400">Chọn nhanh tài khoản để đăng nhập (MK mặc định: <code class="text-ios-blue font-semibold">123456</code>):</p>
+                <div id="login-quick-users" class="flex flex-wrap justify-center gap-1.5">
+                    <button type="button" onclick="quickFillLogin('admin', '123456')" class="px-2.5 py-1 rounded-lg bg-ios-blue/10 hover:bg-ios-blue/20 text-ios-blue font-bold text-[11px] transition-colors">admin (Admin)</button>
+                    <button type="button" onclick="quickFillLogin('tranb', '123456')" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-semibold text-[11px] transition-colors">tranb (Kỹ thuật)</button>
+                    <button type="button" onclick="quickFillLogin('lec', '123456')" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-semibold text-[11px] transition-colors">lec (Kỹ thuật)</button>
+                </div>
             </div>
         </div>
     </div>
@@ -738,7 +745,7 @@
                                 <thead class="bg-slate-200/60 dark:bg-slate-800/60 uppercase font-semibold">
                                     <tr>
                                         <th class="p-3 rounded-l-xl">Họ và tên</th>
-                                        <th class="p-3">Email đăng nhập</th>
+                                        <th class="p-3">Tên đăng nhập</th>
                                         <th class="p-3">Mật khẩu</th>
                                         <th class="p-3">Quyền hạn</th>
                                         <th class="p-3">Trạng thái</th>
@@ -848,8 +855,8 @@
                     <input type="text" id="user-input-name" required placeholder="Nguyễn Văn A" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-500 uppercase mb-1">Email / Tài khoản đăng nhập *</label>
-                    <input type="email" id="user-input-email" required placeholder="nhanvien@resort.com" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+                    <label class="block font-bold text-slate-500 uppercase mb-1">Tên đăng nhập (Username) *</label>
+                    <input type="text" id="user-input-username" required placeholder="VD: nguyenvana, admin..." class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-semibold">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-500 uppercase mb-1">Mật khẩu đăng nhập (Chỉ Admin có quyền đổi) *</label>
@@ -1074,7 +1081,7 @@
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast-box" class="fixed top-20 right-4 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300">
+    <div id="toast-box" class="fixed top-20 right-4 z-[100] transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300">
         <div class="glass-panel px-4 py-3 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800/80 flex items-center space-x-3 text-xs font-semibold">
             <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-ios-green"></i>
             <span id="toast-message">Thông báo!</span>
@@ -1108,9 +1115,9 @@
                 { id: "HO-1", date: todayDefault, shift: "Ca Sáng", fromStaff: "Nguyễn Văn A", receiver: "Trần Văn B", notes: "Hệ thống trung tâm ổn định, lưu ý theo dõi phòng 302 đang chờ vật tư.", items: {} }
             ],
             users: [
-                { id: "USR-001", name: "Nguyễn Văn A", email: "admin.kythuat@resort.com", password: "123456", role: "Admin", status: "Hoạt động" },
-                { id: "USR-002", name: "Trần Văn B", email: "tran.b@resort.com", password: "123456", role: "Kỹ thuật", status: "Hoạt động" },
-                { id: "USR-003", name: "Lê Văn C", email: "le.c@resort.com", password: "123456", role: "Kỹ thuật", status: "Hoạt động" }
+                { id: "USR-001", name: "Nguyễn Văn A", username: "admin", password: "123456", role: "Admin", status: "Hoạt động" },
+                { id: "USR-002", name: "Trần Văn B", username: "tranb", password: "123456", role: "Kỹ thuật", status: "Hoạt động" },
+                { id: "USR-003", name: "Lê Văn C", username: "lec", password: "123456", role: "Kỹ thuật", status: "Hoạt động" }
             ]
         };
 
@@ -1135,8 +1142,25 @@
             appState.tasks = cloudState.tasks || appState.tasks;
             appState.handoverTemplates = cloudState.handoverTemplates || appState.handoverTemplates;
             appState.handoverLogs = cloudState.handoverLogs || appState.handoverLogs;
-            appState.users = cloudState.users || appState.users;
+            if (cloudState.users && Array.isArray(cloudState.users) && cloudState.users.length > 0) {
+                appState.users = cloudState.users.map(u => {
+                    let uname = u.username;
+                    if (!uname && u.email) {
+                        const prefix = u.email.split('@')[0].toLowerCase();
+                        if (prefix.startsWith('admin')) uname = 'admin';
+                        else uname = prefix.replace(/\./g, '');
+                    }
+                    if (!uname) uname = u.role === 'Admin' ? 'admin' : 'user';
+                    return {
+                        ...u,
+                        username: uname,
+                        password: u.password || '123456',
+                        status: u.status || 'Hoạt động'
+                    };
+                });
+            }
             appState.currentUser = currentActiveUser;
+            renderLoginQuickUsers();
             renderAll();
         };
 
@@ -1182,6 +1206,7 @@
             document.getElementById('schedule-filter-date').value = todayDefault;
             document.getElementById('current-date-str').innerText = new Date().toLocaleDateString('vi-VN');
 
+            renderLoginQuickUsers();
             updateUserProfileUI();
             renderAll();
 
@@ -1189,6 +1214,24 @@
                 window.initCloudSync();
             }
         };
+
+        function renderLoginQuickUsers() {
+            const container = document.getElementById('login-quick-users');
+            if (!container || !appState.users) return;
+            container.innerHTML = appState.users.map(u => {
+                const uname = u.username || (u.email ? u.email.split('@')[0].replace(/\./g, '') : 'admin');
+                const pass = u.password || '123456';
+                const isAdm = u.role === 'Admin';
+                return `<button type="button" onclick="quickFillLogin('${uname}', '${pass}')" class="px-2.5 py-1 rounded-lg ${isAdm ? 'bg-ios-blue/10 text-ios-blue font-bold' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold'} hover:opacity-80 text-[11px] transition-all">${uname} (${u.name})</button>`;
+            }).join('');
+        }
+
+        function quickFillLogin(username, password) {
+            document.getElementById('login-username-input').value = username;
+            document.getElementById('login-password-input').value = password || '123456';
+            const errBox = document.getElementById('login-error-msg');
+            if (errBox) errBox.classList.add('hidden');
+        }
 
         function renderAll() {
             renderDashboard();
@@ -1240,33 +1283,77 @@
 
         // Authentication
         function handleLoginSubmit(e) {
-            e.preventDefault();
-            const emailInput = document.getElementById('login-email-input').value.trim().toLowerCase();
+            if (e) e.preventDefault();
+            const rawInput = document.getElementById('login-username-input').value.trim();
+            const usernameInput = rawInput.toLowerCase();
             const passInput = document.getElementById('login-password-input').value.trim();
+            const errBox = document.getElementById('login-error-msg');
+            if (errBox) errBox.classList.add('hidden');
 
-            const foundUser = appState.users.find(u => u.email.toLowerCase() === emailInput || u.name.toLowerCase() === emailInput);
+            const showLoginError = (msg) => {
+                if (errBox) {
+                    errBox.innerText = msg;
+                    errBox.classList.remove('hidden');
+                }
+                showToast(msg, "error");
+            };
+
+            let foundUser = appState.users.find(u => {
+                const uName = (u.username || "").toLowerCase();
+                const uEmail = (u.email || "").toLowerCase();
+                const emailPrefix = uEmail ? uEmail.split('@')[0] : "";
+                const emailClean = emailPrefix.replace(/\./g, "");
+                const fullName = (u.name || "").toLowerCase();
+
+                return (
+                    uName === usernameInput ||
+                    uEmail === usernameInput ||
+                    emailPrefix === usernameInput ||
+                    emailClean === usernameInput ||
+                    fullName === usernameInput ||
+                    (usernameInput === 'admin' && u.role === 'Admin')
+                );
+            });
+
+            // Fallback an toàn cho tài khoản admin mặc định nếu dữ liệu đám mây chưa đồng bộ kịp
+            if (!foundUser && usernameInput === 'admin' && passInput === '123456') {
+                foundUser = { id: "USR-001", name: "Nguyễn Văn A", username: "admin", password: "123456", role: "Admin", status: "Hoạt động" };
+                appState.users.unshift(foundUser);
+            }
+
             if (!foundUser) {
-                showToast("Tài khoản không tồn tại!", "error");
+                showLoginError("Tên đăng nhập không tồn tại! Hãy thử 'admin' hoặc bấm nút chọn nhanh bên dưới.");
                 return;
             }
-            if (passInput !== (foundUser.password || "123456")) {
-                showToast("Sai mật khẩu đăng nhập!", "error");
+            if (passInput !== String(foundUser.password || "123456")) {
+                showLoginError("Sai mật khẩu đăng nhập!");
                 return;
             }
             if (foundUser.status === 'Tạm khóa') {
-                showToast("Tài khoản đã bị tạm khóa!", "error");
+                showLoginError("Tài khoản này đang bị tạm khóa! Vui lòng liên hệ Admin.");
                 return;
             }
 
             appState.currentUser = foundUser;
-            document.getElementById('login-screen').classList.add('opacity-0', 'pointer-events-none');
+            const loginScreen = document.getElementById('login-screen');
+            loginScreen.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                loginScreen.style.display = 'none';
+            }, 300);
+
             updateUserProfileUI();
+            renderAll();
             showToast(`Chào mừng ${foundUser.name} (${foundUser.role})!`);
         }
 
         function handleLogout() {
             appState.currentUser = null;
-            document.getElementById('login-screen').classList.remove('opacity-0', 'pointer-events-none');
+            const loginScreen = document.getElementById('login-screen');
+            loginScreen.style.display = 'flex';
+            setTimeout(() => {
+                loginScreen.classList.remove('opacity-0', 'pointer-events-none');
+            }, 10);
+            renderLoginQuickUsers();
         }
 
         function updateUserProfileUI() {
@@ -1690,10 +1777,12 @@
         // Admin Portal (Personnel & Password management)
         function renderAdminPortal() {
             const tbody = document.getElementById('admin-users-tbody');
-            tbody.innerHTML = appState.users.map(u => `
+            tbody.innerHTML = appState.users.map(u => {
+                const displayUsername = u.username || (u.email ? u.email.split('@')[0] : 'user');
+                return `
                 <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
                     <td class="p-3 font-bold">${u.name}</td>
-                    <td class="p-3 text-slate-500">${u.email}</td>
+                    <td class="p-3 font-semibold text-slate-600 dark:text-slate-300">${displayUsername}</td>
                     <td class="p-3 font-mono text-ios-blue font-bold">${u.password || '123456'}</td>
                     <td class="p-3"><span class="px-2 py-0.5 rounded font-bold text-[10px] ${u.role === 'Admin' ? 'bg-ios-red/10 text-ios-red' : 'bg-ios-blue/10 text-ios-blue'}">${u.role}</span></td>
                     <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${u.status === 'Hoạt động' ? 'bg-ios-green/10 text-ios-green' : 'bg-slate-200 text-slate-500'}">${u.status}</span></td>
@@ -1702,7 +1791,7 @@
                         <button onclick="deleteUser('${u.id}')" class="p-1.5 text-slate-400 hover:text-ios-red"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         function openAddUserModal() {
@@ -1725,7 +1814,7 @@
             if (!user) return;
             document.getElementById('user-edit-id').value = user.id;
             document.getElementById('user-input-name').value = user.name;
-            document.getElementById('user-input-email').value = user.email;
+            document.getElementById('user-input-username').value = user.username || (user.email ? user.email.split('@')[0] : '');
             document.getElementById('user-input-password').value = user.password || '123456';
             document.getElementById('user-input-role').value = user.role;
             document.getElementById('user-input-status').value = user.status;
@@ -1736,7 +1825,7 @@
             e.preventDefault();
             const editId = document.getElementById('user-edit-id').value;
             const name = document.getElementById('user-input-name').value.trim();
-            const email = document.getElementById('user-input-email').value.trim();
+            const username = document.getElementById('user-input-username').value.trim();
             const password = document.getElementById('user-input-password').value.trim() || '123456';
             const role = document.getElementById('user-input-role').value;
             const status = document.getElementById('user-input-status').value;
@@ -1745,14 +1834,15 @@
                 const user = appState.users.find(u => u.id === editId);
                 if (user) {
                     user.name = name;
-                    user.email = email;
+                    user.username = username;
+                    delete user.email;
                     user.password = password;
                     user.role = role;
                     user.status = status;
                 }
                 showToast("Đã cập nhật thông tin & mật khẩu nhân sự!");
             } else {
-                appState.users.push({ id: "USR-" + Date.now(), name, email, password, role, status });
+                appState.users.push({ id: "USR-" + Date.now(), name, username, password, role, status });
                 showToast("Đã thêm nhân sự mới!");
             }
             closeModal('modal-user');
