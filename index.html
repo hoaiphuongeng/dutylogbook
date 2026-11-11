@@ -1,0 +1,1966 @@
+<!DOCTYPE html>
+<html lang="vi" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sổ Trực Ca - Kỹ Thuật Resort</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        ios: {
+                            blue: '#007AFF',
+                            green: '#34C759',
+                            indigo: '#5856D6',
+                            orange: '#FF9500',
+                            pink: '#FF2D55',
+                            purple: '#AF52DE',
+                            red: '#FF3B30',
+                            teal: '#5AC8FA',
+                            yellow: '#FFCC00',
+                            gray: '#8E8E93',
+                            grayLight: '#F2F2F7',
+                            grayDark: '#1C1C1E',
+                            cardLight: '#FFFFFF',
+                            cardDark: '#2C2C2E'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', "Segoe UI", 'Roboto', 'Helvetica', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        window.firebaseModules = {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
+            getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, addDoc, getDocs
+        };
+    </script>
+    <style>
+        /* iOS Glassmorphism & Animations */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .dark .glass-panel {
+            background: rgba(44, 44, 46, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .dark .glass-card {
+            background: rgba(44, 44, 46, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        /* Fade Zoom Dim transition */
+        .view-transition {
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .view-hidden {
+            opacity: 0;
+            transform: scale(0.97) translateY(8px);
+            pointer-events: none;
+            position: absolute;
+            width: 100%;
+        }
+        .view-active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            position: relative;
+            pointer-events: auto;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(142, 142, 147, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(142, 142, 147, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-ios-grayLight dark:bg-black text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-ios-blue selection:text-white">
+
+    <!-- ================= LOGIN SCREEN OVERLAY ================= -->
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xl p-4 transition-opacity duration-500">
+        <div class="glass-card w-full max-w-md p-8 rounded-3xl shadow-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-ios-blue to-ios-teal flex items-center justify-center text-white shadow-xl shadow-ios-blue/30 mx-auto">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+                <h1 class="font-bold text-2xl tracking-tight">Sổ Trực Ca Kỹ Thuật</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Đăng nhập hệ thống vận hành resort (Mật khẩu mặc định: <strong class="text-ios-blue">123456</strong>)</p>
+            </div>
+
+            <form onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
+                <div class="space-y-1">
+                    <label class="block font-bold text-slate-500 uppercase tracking-wider text-[10px]">Tài khoản / Email nhân viên</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="absolute left-3.5 top-3 w-4 h-4 text-slate-400"></i>
+                        <input type="text" id="login-email-input" required placeholder="admin.kythuat@resort.com hoặc tran.b@resort.com" value="admin.kythuat@resort.com" class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-ios-blue">
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block font-bold text-slate-500 uppercase tracking-wider text-[10px]">Mật khẩu</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="absolute left-3.5 top-3 w-4 h-4 text-slate-400"></i>
+                        <input type="password" id="login-password-input" required placeholder="Nhập mật khẩu (123456)" value="123456" class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-ios-blue">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-ios-blue hover:bg-ios-blue/90 text-white font-bold text-sm shadow-xl shadow-ios-blue/30 transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập Hệ Thống
+                </button>
+            </form>
+
+            <div class="pt-4 border-t border-slate-200/50 dark:border-slate-800/50 text-center">
+                <p class="text-[11px] text-slate-400">Gợi ý nhanh tài khoản test: <br>• Admin: <code class="text-ios-blue">admin.kythuat@resort.com</code><br>• Kỹ thuật: <code class="text-ios-blue">tran.b@resort.com</code> (Mật khẩu: <code class="text-ios-blue">123456</code>)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Navigation Bar (iOS Style Header) -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-slate-200/60 dark:border-slate-800/60 px-4 py-3 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-ios-blue to-ios-teal flex items-center justify-center text-white shadow-md shadow-ios-blue/20">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight flex items-center gap-2">
+                        Sổ Trực Ca <span class="text-xs px-2 py-0.5 rounded-full bg-ios-blue/10 text-ios-blue font-medium">Resort v2.5</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                        <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-amber-500 inline-block animate-pulse"></span>
+                        <span id="sync-status-text">Đang kết nối Local & Firebase...</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center space-x-2">
+                <!-- User Profile & Role badge -->
+                <div class="hidden sm:flex items-center space-x-2 bg-slate-200/60 dark:bg-slate-800/60 px-3 py-1.5 rounded-full text-xs font-medium">
+                    <i data-lucide="user-cog" class="w-3.5 h-3.5 text-ios-blue"></i>
+                    <span id="header-user-name">Đang tải...</span>
+                    <span id="header-user-role" class="px-1.5 py-0.5 rounded bg-ios-blue text-white text-[10px] font-bold uppercase">...</span>
+                </div>
+
+                <!-- Logout Button -->
+                <button onclick="handleLogout()" class="p-2.5 rounded-full hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-colors text-ios-red" title="Đăng xuất">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()" class="p-2.5 rounded-full hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300" title="Chuyển chế độ sáng/tối">
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+
+                <!-- Cloud Backup Modal trigger -->
+                <button onclick="openBackupModal()" class="p-2.5 rounded-full hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 hidden sm:flex" title="Sao lưu & Phục hồi">
+                    <i data-lucide="database" class="w-5 h-5"></i>
+                </button>
+
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden p-2.5 rounded-full hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Container with Sidebar Navigation -->
+    <div class="max-w-7xl mx-auto w-full flex-1 flex flex-col md:flex-row p-3 md:p-6 gap-6 relative">
+
+        <!-- Sidebar Navigation (Desktop) & Floating Menu (Mobile) -->
+        <aside id="sidebar" class="hidden md:flex flex-col w-64 shrink-0 space-y-2">
+            <div class="glass-card rounded-2xl p-3 shadow-sm border border-slate-200/50 dark:border-slate-800/50 space-y-1">
+                <div class="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Hệ thống ca trực</div>
+                <button onclick="switchView('dashboard')" data-view="dashboard" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-slate-700 dark:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 text-ios-blue"></i>
+                    <span>Dashboard Tổng Quan</span>
+                </button>
+                <button onclick="switchView('tasks')" data-view="tasks" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-slate-700 dark:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50">
+                    <i data-lucide="check-square" class="w-5 h-5 text-ios-green"></i>
+                    <span>Nội Dung Công Việc</span>
+                </button>
+                <button onclick="switchView('handover')" data-view="handover" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-slate-700 dark:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50">
+                    <i data-lucide="file-text" class="w-5 h-5 text-ios-orange"></i>
+                    <span>Bàn Giao Ca Trực</span>
+                </button>
+                <button onclick="switchView('reports')" data-view="reports" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-slate-700 dark:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-ios-purple"></i>
+                    <span>Báo Cáo & Thống Kê</span>
+                </button>
+                <button onclick="switchView('schedule')" data-view="schedule" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-slate-700 dark:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50">
+                    <i data-lucide="calendar-days" class="w-5 h-5 text-ios-teal"></i>
+                    <span>Lịch Phân Ca Trực</span>
+                </button>
+                <button onclick="switchView('admin')" data-view="admin" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-slate-700 dark:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50">
+                    <i data-lucide="shield-alert" class="w-5 h-5 text-ios-red"></i>
+                    <span>Quản Trị Hệ Thống</span>
+                </button>
+            </div>
+
+            <!-- Quick Shift Info Card -->
+            <div class="glass-card rounded-2xl p-4 shadow-sm border border-slate-200/50 dark:border-slate-800/50 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase text-slate-400">Ca Trực Hiện Tại</span>
+                    <span id="current-shift-badge" class="px-2 py-0.5 rounded bg-ios-green/10 text-ios-green text-xs font-semibold">Ca Sáng</span>
+                </div>
+                <div class="text-xs space-y-1 text-slate-600 dark:text-slate-300">
+                    <p class="flex justify-between"><span>Trưởng ca:</span> <strong id="shift-leader-name">Nguyễn Văn A</strong></p>
+                    <p class="flex justify-between"><span>Thời gian:</span> <span id="shift-time-range">06:00 - 14:00</span></p>
+                    <p class="flex justify-between"><span>Ngày:</span> <span id="current-date-str">11/03/2026</span></p>
+                </div>
+                <button onclick="openChangeShiftModal()" class="w-full py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-semibold rounded-xl transition-colors">
+                    Đổi Ca / Bàn Giao Nhanh
+                </button>
+            </div>
+        </aside>
+
+        <!-- Mobile Bottom Nav Bar -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-slate-200 dark:border-slate-800 px-4 py-2 flex justify-around items-center">
+            <button onclick="switchView('dashboard')" data-view="dashboard" class="mobile-nav-btn flex flex-col items-center p-1 text-slate-500 dark:text-slate-400">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-1">Tổng quan</span>
+            </button>
+            <button onclick="switchView('tasks')" data-view="tasks" class="mobile-nav-btn flex flex-col items-center p-1 text-slate-500 dark:text-slate-400">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-1">Công việc</span>
+            </button>
+            <button onclick="switchView('handover')" data-view="handover" class="mobile-nav-btn flex flex-col items-center p-1 text-slate-500 dark:text-slate-400">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-1">Bàn giao</span>
+            </button>
+            <button onclick="switchView('reports')" data-view="reports" class="mobile-nav-btn flex flex-col items-center p-1 text-slate-500 dark:text-slate-400">
+                <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-1">Báo cáo</span>
+            </button>
+            <button onclick="switchView('schedule')" data-view="schedule" class="mobile-nav-btn flex flex-col items-center p-1 text-slate-500 dark:text-slate-400">
+                <i data-lucide="calendar-days" class="w-5 h-5"></i>
+                <span class="text-[10px] mt-1">Lịch ca</span>
+            </button>
+        </nav>
+
+        <!-- Main Content Area with Fade-Zoom-Dim Transitions -->
+        <main class="flex-1 relative min-h-[600px] overflow-hidden">
+
+            <!-- Floating Quick Entry Plus Button (Visible on all views) -->
+            <div class="fixed bottom-20 md:bottom-8 right-6 z-40">
+                <button onclick="openAddTaskModal()" class="w-14 h-14 rounded-full bg-ios-blue hover:bg-ios-blue/90 text-white flex items-center justify-center shadow-2xl shadow-ios-blue/40 transform hover:scale-105 active:scale-95 transition-all group" title="Thêm công việc nhanh">
+                    <i data-lucide="plus" class="w-7 h-7 transition-transform group-hover:rotate-90"></i>
+                </button>
+            </div>
+
+            <!-- ================= VIEW 1: DASHBOARD ================= -->
+            <div id="view-dashboard" class="view-transition view-active space-y-6">
+                <!-- Filter bar -->
+                <div class="glass-card p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3">
+                        <h2 class="font-bold text-lg flex items-center gap-2">
+                            <i data-lucide="activity" class="w-5 h-5 text-ios-blue"></i> Tổng Quan Vận Hành Kỹ Thuật
+                        </h2>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="date" id="filter-date" onchange="renderDashboard()" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ios-blue">
+                        <select id="filter-shift" onchange="renderDashboard()" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ios-blue">
+                            <option value="ALL">Tất cả ca trực</option>
+                            <option value="Ca Sáng">Ca Sáng (06:00 - 14:00)</option>
+                            <option value="Ca Chiều">Ca Chiều (14:00 - 22:00)</option>
+                            <option value="Ca Đêm">Ca Đêm (22:00 - 06:00)</option>
+                        </select>
+                        <button onclick="resetDashboardFilters()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-xs font-semibold rounded-xl transition-colors">Đặt lại</button>
+                    </div>
+                </div>
+
+                <!-- KPI Metric Cards Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Card 1: Guest Room Issues -->
+                    <div class="glass-card p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-2 relative overflow-hidden">
+                        <div class="absolute right-3 top-3 p-2 bg-ios-blue/10 text-ios-blue rounded-xl">
+                            <i data-lucide="bed-double" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block">Lỗi Phòng Khách</span>
+                        <div class="text-2xl font-bold" id="stat-guest-issues">0</div>
+                        <div class="text-[11px] text-slate-500 flex items-center gap-1">
+                            <span class="text-ios-blue font-semibold" id="stat-guest-done">0</span> đã xử lý
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Public Area Issues -->
+                    <div class="glass-card p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-2 relative overflow-hidden">
+                        <div class="absolute right-3 top-3 p-2 bg-ios-orange/10 text-ios-orange rounded-xl">
+                            <i data-lucide="building-2" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block">Lỗi Khu Vực Công Cộng</span>
+                        <div class="text-2xl font-bold" id="stat-public-issues">0</div>
+                        <div class="text-[11px] text-slate-500 flex items-center gap-1">
+                            <span class="text-ios-orange font-semibold" id="stat-public-done">0</span> đã xử lý
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Completed / Pending -->
+                    <div class="glass-card p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-2 relative overflow-hidden">
+                        <div class="absolute right-3 top-3 p-2 bg-ios-green/10 text-ios-green rounded-xl">
+                            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block">Hoàn Thành / Chưa TĐ</span>
+                        <div class="text-2xl font-bold"><span id="stat-completed" class="text-ios-green">0</span> / <span id="stat-pending" class="text-ios-red">0</span></div>
+                        <div class="text-[11px] text-slate-500 flex items-center gap-1">
+                            Tỷ lệ hoàn thành: <strong id="stat-rate">0%</strong>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Room Change Incidents -->
+                    <div class="glass-card p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-2 relative overflow-hidden">
+                        <div class="absolute right-3 top-3 p-2 bg-ios-purple/10 text-ios-purple rounded-xl">
+                            <i data-lucide="repeat" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 block">Sự Cố Đổi Phòng Khách</span>
+                        <div class="text-2xl font-bold" id="stat-room-changes">0</div>
+                        <div class="text-[11px] text-slate-500 flex items-center gap-1">
+                            Cần theo dõi đặc biệt
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary Metric Row: Backlog & Handover Summary -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Backlog / Pending List preview (Filtered strictly by selected date & shift) -->
+                    <div class="lg:col-span-2 glass-card p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-base flex items-center gap-2 text-ios-red">
+                                <i data-lucide="alert-triangle" class="w-5 h-5"></i> Danh Sách Lỗi Tồn Đọng (Trong Ca / Ngày Đã Chọn)
+                            </h3>
+                            <button onclick="switchView('tasks')" class="text-xs font-semibold text-ios-blue hover:underline">Xem tất cả &rarr;</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-200/50 dark:bg-slate-800/50 text-slate-500 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-3 rounded-l-xl">Vị trí / Phòng</th>
+                                        <th class="p-3">Nội dung sự cố</th>
+                                        <th class="p-3">Người báo</th>
+                                        <th class="p-3 text-right rounded-r-xl">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-backlog-tbody" class="divide-y divide-slate-200/40 dark:divide-slate-800/40">
+                                    <!-- Dynamic rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Shift Handover Quick Notes summary -->
+                    <div class="glass-card p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-base flex items-center gap-2 text-ios-orange">
+                                <i data-lucide="clipboard-list" class="w-5 h-5"></i> Nội Dung Bàn Giao Ca
+                            </h3>
+                            <button onclick="switchView('handover')" class="text-xs font-semibold text-ios-blue hover:underline">Chi tiết</button>
+                        </div>
+                        <div id="dashboard-handover-summary" class="space-y-3 max-h-[250px] overflow-y-auto pr-1">
+                            <!-- Dynamic items injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW: SHIFT SCHEDULE (LỊCH PHÂN CA) ================= -->
+            <div id="view-schedule" class="view-transition view-hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/50 dark:border-slate-800/50 pb-4">
+                        <div>
+                            <h2 class="font-bold text-xl flex items-center gap-2">
+                                <i data-lucide="calendar-days" class="w-5 h-5 text-ios-teal"></i> Lịch Phân Ca Trực Nhân Sự Kỹ Thuật
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-1">Quản lý và phân công nhân sự trực theo từng ngày và ca trực chuẩn. Có thể tải lên bằng file Excel.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input type="date" id="schedule-filter-date" onchange="renderScheduleTable()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium">
+                            
+                            <!-- Excel Import button -->
+                            <label class="px-3.5 py-2 bg-ios-green hover:bg-ios-green/90 text-white rounded-xl text-xs font-bold shadow-md shadow-ios-green/20 flex items-center gap-2 cursor-pointer transition-all">
+                                <i data-lucide="upload" class="w-4 h-4"></i> Tải Lên Excel
+                                <input type="file" id="import-schedule-excel" onchange="importScheduleExcel(event)" accept=".xlsx, .xls, .csv" class="hidden">
+                            </label>
+
+                            <!-- Template download button -->
+                            <button onclick="downloadScheduleTemplate()" class="px-3.5 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors" title="Tải file Excel mẫu">
+                                <i data-lucide="download" class="w-4 h-4 text-ios-teal"></i> File Mẫu
+                            </button>
+
+                            <button onclick="openAssignScheduleModal()" class="px-4 py-2 bg-ios-teal hover:bg-ios-teal/90 text-white rounded-xl text-xs font-bold shadow-lg shadow-ios-teal/20 flex items-center gap-2 transition-all">
+                                <i data-lucide="user-plus" class="w-4 h-4"></i> Phân Ca Mới
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Shift Schedule Grid / Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-200/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 uppercase font-semibold">
+                                <tr>
+                                    <th class="p-3 rounded-l-xl">Ngày Trực</th>
+                                    <th class="p-3">Ca Trực</th>
+                                    <th class="p-3">Nhân Viên Trực (Đã Phân Ca)</th>
+                                    <th class="p-3">Vai Trò / Ghi Chú</th>
+                                    <th class="p-3 text-right rounded-r-xl">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schedule-table-tbody" class="divide-y divide-slate-200/50 dark:divide-slate-800/50">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW 2: TASK MANAGEMENT ================= -->
+            <div id="view-tasks" class="view-transition view-hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/50 dark:border-slate-800/50 pb-4">
+                        <div>
+                            <h2 class="font-bold text-xl flex items-center gap-2">
+                                <i data-lucide="check-square" class="w-5 h-5 text-ios-green"></i> Quản Lý & Nhập Liệu Công Việc Kỹ Thuật
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-1">Ghi nhận sự cố phòng khách, công cộng và cập nhật tiến độ xử lý thời gian thực.</p>
+                        </div>
+                        <button onclick="openAddTaskModal()" class="px-4 py-2.5 bg-ios-blue hover:bg-ios-blue/90 text-white rounded-xl text-xs font-bold shadow-lg shadow-ios-blue/20 flex items-center gap-2 transition-all">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Thêm Công Việc Mới
+                        </button>
+                    </div>
+
+                    <!-- Search and filters for tasks -->
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center space-x-2 flex-1 min-w-[240px]">
+                            <div class="relative w-full">
+                                <i data-lucide="search" class="absolute left-3 top-3 w-4 h-4 text-slate-400"></i>
+                                <input type="text" id="task-search" oninput="renderTasksTable()" placeholder="Tìm kiếm theo phòng, khu vực, nội dung..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-ios-blue">
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <select id="task-filter-status" onchange="renderTasksTable()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium">
+                                <option value="ALL">Tất cả trạng thái</option>
+                                <option value="Hoàn thành">Hoàn thành</option>
+                                <option value="Chưa hoàn thành">Chưa hoàn thành (Pending)</option>
+                                <option value="Sự cố đổi phòng">Sự cố đổi phòng</option>
+                            </select>
+                            <select id="task-filter-location" onchange="renderTasksTable()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium">
+                                <option value="ALL">Tất cả khu vực</option>
+                                <option value="Phòng Khách">Phòng Khách</option>
+                                <option value="Khu Công Cộng">Khu Công Cộng</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tasks Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-200/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 uppercase font-semibold">
+                                <tr>
+                                    <th class="p-3 rounded-l-xl">Ca / Thời gian</th>
+                                    <th class="p-3">Loại / Vị trí</th>
+                                    <th class="p-3">Nội dung công việc / Sự cố</th>
+                                    <th class="p-3">Người thực hiện</th>
+                                    <th class="p-3">Trạng thái</th>
+                                    <th class="p-3 text-right rounded-r-xl">Thao tác xác nhận</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tasks-table-tbody" class="divide-y divide-slate-200/50 dark:divide-slate-800/50">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Inline Excel-style Quick Task Entry Box (Below Table) -->
+                    <div class="mt-6 pt-6 border-t border-slate-200/50 dark:border-slate-800/50 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-ios-blue"></i> Nhập Nhanh Công Việc (Kiểu Bảng Excel)
+                            </h3>
+                            <span class="text-[11px] text-slate-400">Thêm dòng nhanh trực tiếp</span>
+                        </div>
+                        <div class="glass-card p-4 rounded-2xl bg-slate-100/60 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 text-xs">
+                                <div>
+                                    <label class="block font-bold text-slate-500 uppercase mb-1 text-[10px]">Ca Trực</label>
+                                    <select id="quick-inline-shift" class="w-full p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                                        <option value="Ca Sáng">Ca Sáng</option>
+                                        <option value="Ca Chiều">Ca Chiều</option>
+                                        <option value="Ca Đêm">Ca Đêm</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-500 uppercase mb-1 text-[10px]">Khu Vực</label>
+                                    <select id="quick-inline-loc-type" onchange="toggleInlineLocationFields()" class="w-full p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                                        <option value="Phòng Khách">Phòng Khách</option>
+                                        <option value="Khu Công Cộng">Khu Công Cộng</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-500 uppercase mb-1 text-[10px]">Số Phòng / Khu Vực</label>
+                                    <input type="text" id="quick-inline-loc-detail" placeholder="VD: 302 hoặc Sảnh" class="w-full p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                                </div>
+                                <div class="lg:col-span-2">
+                                    <label class="block font-bold text-slate-500 uppercase mb-1 text-[10px]">Nội Dung Công Việc / Sự Cố</label>
+                                    <input type="text" id="quick-inline-desc" placeholder="Mô tả sự cố kỹ thuật..." class="w-full p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-500 uppercase mb-1 text-[10px]">Trạng Thái</label>
+                                    <select id="quick-inline-status" class="w-full p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                                        <option value="Hoàn thành">Hoàn thành</option>
+                                        <option value="Chưa hoàn thành">Chưa hoàn thành</option>
+                                        <option value="Sự cố đổi phòng">Sự cố đổi phòng</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end pt-2">
+                                <button type="button" onclick="submitInlineQuickTask()" class="px-5 py-2 bg-ios-blue hover:bg-ios-blue/90 text-white rounded-xl text-xs font-bold shadow-md shadow-ios-blue/20 flex items-center gap-2 transition-all">
+                                    <i data-lucide="plus" class="w-4 h-4"></i> Thêm Nhanh Vào Sổ Trực
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW 3: SHIFT HANDOVER ================= -->
+            <div id="view-handover" class="view-transition view-hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/50 dark:border-slate-800/50 pb-4">
+                        <div>
+                            <h2 class="font-bold text-xl flex items-center gap-2">
+                                <i data-lucide="file-text" class="w-5 h-5 text-ios-orange"></i> Biên Bản & Checklist Bàn Giao Ca
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-1">Nhân viên kiểm tra và tick chọn theo danh mục chuẩn, có thể bổ sung danh mục thực tế phát sinh.</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="openCustomHandoverModal()" class="px-3.5 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors">
+                                <i data-lucide="plus-circle" class="w-4 h-4 text-ios-orange"></i> Thêm Hạng Mục Thực Tế
+                            </button>
+                            <button onclick="saveHandoverLog()" class="px-4 py-2 bg-ios-orange hover:bg-ios-orange/90 text-white rounded-xl text-xs font-bold shadow-lg shadow-ios-orange/20 flex items-center gap-2 transition-all">
+                                <i data-lucide="save" class="w-4 h-4"></i> Lưu Bàn Giao Ca
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Shift handover metadata -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-100/60 dark:bg-slate-800/40 p-4 rounded-2xl">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ca Giao</label>
+                            <select id="handover-from-shift" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs">
+                                <option value="Ca Sáng">Ca Sáng (06:00 - 14:00)</option>
+                                <option value="Ca Chiều">Ca Chiều (14:00 - 22:00)</option>
+                                <option value="Ca Đêm">Ca Đêm (22:00 - 06:00)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Người Giao Ca</label>
+                            <input type="text" id="handover-staff-name" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs" value="Nguyễn Văn A">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Người Nhận Ca</label>
+                            <input type="text" id="handover-receiver-name" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs" value="Trần Văn B">
+                        </div>
+                    </div>
+
+                    <!-- Checklist items container -->
+                    <div class="space-y-3">
+                        <h3 class="font-bold text-sm text-slate-600 dark:text-slate-300">Danh Mục Kiểm Tra Bàn Giao Ca (Admin Template & Tùy Chỉnh)</h3>
+                        <div id="handover-checklist-container" class="space-y-2">
+                            <!-- Dynamic checklist items -->
+                        </div>
+                    </div>
+
+                    <!-- Handover General Notes -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">Ghi Chú Chung & Tình Trạng Thiết Bị Đặc Biệt</label>
+                        <textarea id="handover-general-notes" rows="3" class="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-ios-orange" placeholder="Nhập ghi chú bàn giao ca, các công cụ dụng cụ bàn giao, chìa khóa phòng kỹ thuật..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW 4: REPORTS ================= -->
+            <div id="view-reports" class="view-transition view-hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/50 dark:border-slate-800/50 pb-4">
+                        <div>
+                            <h2 class="font-bold text-xl flex items-center gap-2">
+                                <i data-lucide="bar-chart-3" class="w-5 h-5 text-ios-purple"></i> Báo Cáo & Xuất Dữ Liệu
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-1">Xuất báo cáo toàn bộ công việc ca trực, thống kê theo nhân sự và thời gian.</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="exportToExcel()" class="px-4 py-2.5 bg-ios-green hover:bg-ios-green/90 text-white rounded-xl text-xs font-bold shadow-lg shadow-ios-green/20 flex items-center gap-2 transition-all">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Xuất Excel / CSV
+                            </button>
+                            <button onclick="window.print()" class="px-4 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors">
+                                <i data-lucide="printer" class="w-4 h-4"></i> In Báo Cáo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Report stats summary -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-slate-100/60 dark:bg-slate-800/40 p-4 rounded-2xl space-y-1">
+                            <span class="text-xs font-semibold text-slate-500">Tổng Số Công Việc Trong Kỳ</span>
+                            <div class="text-2xl font-bold" id="report-total-tasks">0</div>
+                        </div>
+                        <div class="bg-slate-100/60 dark:bg-slate-800/40 p-4 rounded-2xl space-y-1">
+                            <span class="text-xs font-semibold text-slate-500">Đã Hoàn Thành Xử Lý</span>
+                            <div class="text-2xl font-bold text-ios-green" id="report-done-tasks">0</div>
+                        </div>
+                        <div class="bg-slate-100/60 dark:bg-slate-800/40 p-4 rounded-2xl space-y-1">
+                            <span class="text-xs font-semibold text-slate-500">Tồn Đọng (Pending)</span>
+                            <div class="text-2xl font-bold text-ios-red" id="report-pending-tasks">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Performance by technician table -->
+                    <div class="space-y-3">
+                        <h3 class="font-bold text-sm text-slate-700 dark:text-slate-300">Hiệu Suất Theo Nhân Sự Kỹ Thuật</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-200/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 uppercase font-semibold">
+                                    <tr>
+                                        <th class="p-3 rounded-l-xl">Họ và tên nhân viên</th>
+                                        <th class="p-3">Tổng việc nhận</th>
+                                        <th class="p-3">Hoàn thành</th>
+                                        <th class="p-3">Chưa hoàn thành</th>
+                                        <th class="p-3 rounded-r-xl">Tỷ lệ hoàn thành</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-technician-tbody" class="divide-y divide-slate-200/40 dark:divide-slate-800/40">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW 5: ADMIN PORTAL ================= -->
+        <div id="view-admin" class="view-transition view-hidden space-y-6">
+            <div class="glass-card p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/50 dark:border-slate-800/50 pb-4">
+                    <div>
+                        <h2 class="font-bold text-xl flex items-center gap-2">
+                            <i data-lucide="shield-alert" class="w-5 h-5 text-ios-red"></i> Khu Vực Quản Trị Hệ Thống (RBAC)
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">Quản lý tài khoản nhân viên, phân quyền Admin/Kỹ thuật, thêm bớt và chỉnh sửa thông tin nhân sự.</p>
+                    </div>
+                    <button onclick="openAddUserModal()" class="px-4 py-2 bg-ios-red hover:bg-ios-red/90 text-white rounded-xl text-xs font-bold shadow-lg shadow-ios-red/20 flex items-center gap-2 transition-all">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i> Thêm Nhân Sự Mới
+                    </button>
+                </div>
+
+                <!-- Admin Tabs or Sections -->
+                <div class="space-y-6">
+                    <!-- Users management table -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i data-lucide="users" class="w-4 h-4 text-ios-blue"></i> Danh Sách Nhân Sự & Phân Quyền
+                            </h3>
+                            <span class="text-[11px] text-slate-400">Quản lý toàn bộ nhân viên kỹ thuật resort</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-200/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 uppercase font-semibold">
+                                    <tr>
+                                        <th class="p-3 rounded-l-xl">Họ và tên</th>
+                                        <th class="p-3">Tài khoản / Email</th>
+                                        <th class="p-3">Chức vụ / Role</th>
+                                        <th class="p-3">Trạng thái</th>
+                                        <th class="p-3 text-right rounded-r-xl">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-users-tbody" class="divide-y divide-slate-200/40 dark:divide-slate-800/40">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modals Container -->
+    <!-- 1. Task Modal (Add / Edit) -->
+    <div id="modal-task" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-card w-full max-w-lg p-6 rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-4 transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800/50 pb-3">
+                <h3 id="task-modal-title" class="font-bold text-base flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-ios-blue"></i> Thêm Mới Công Việc Kỹ Thuật
+                </h3>
+                <button onclick="closeModal('modal-task')" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="form-task" onsubmit="handleTaskFormSubmit(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="task-edit-id">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-500 uppercase mb-1">Khu Vực *</label>
+                        <select id="task-location-type" onchange="toggleLocationFields()" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                            <option value="Phòng Khách">Phòng Khách</option>
+                            <option value="Khu Công Cộng">Khu Công Cộng</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div id="container-room-no">
+                            <label class="block font-bold text-slate-500 uppercase mb-1">Số Phòng *</label>
+                            <input type="text" id="task-room-number" placeholder="Ví dụ: 302, 508..." class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                        </div>
+                        <div id="container-area-name" class="hidden">
+                            <label class="block font-bold text-slate-500 uppercase mb-1">Tên Khu Vực *</label>
+                            <input type="text" id="task-area-name" placeholder="Ví dụ: Sảnh Lễ Tấn, Hồ Bơi..." class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-500 uppercase mb-1">Ca Trực *</label>
+                        <select id="task-shift" onchange="updateAssigneeDropdown()" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                            <option value="Ca Sáng">Ca Sáng</option>
+                            <option value="Ca Chiều">Ca Chiều</option>
+                            <option value="Ca Đêm">Ca Đêm</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-500 uppercase mb-1">Nhân Sự Thực Hiện *</label>
+                        <select id="task-assignee" required class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-500 uppercase mb-1">Nội Dung Công Việc / Sự Cố Chi Tiết *</label>
+                    <textarea id="task-description" rows="3" required class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium" placeholder="Mô tả chi tiết sự cố kỹ thuật..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-500 uppercase mb-1">Kết Quả Thực Hiện *</label>
+                        <select id="task-status" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                            <option value="Hoàn thành">Hoàn thành (Đã xử lý)</option>
+                            <option value="Chưa hoàn thành">Chưa hoàn thành (Pending lên Dashboard)</option>
+                            <option value="Sự cố đổi phòng">Sự cố đổi phòng khách</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-500 uppercase mb-1">Mức Độ Ưu Tiên</label>
+                        <select id="task-priority" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                            <option value="Bình thường">Bình thường</option>
+                            <option value="Khẩn cấp">Khẩn cấp (Khách phàn nàn)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200/50 dark:border-slate-800/50">
+                    <button type="button" onclick="closeModal('modal-task')" class="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 font-semibold hover:bg-slate-300">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-ios-blue text-white font-bold shadow-md hover:bg-ios-blue/90">Lưu Công Việc</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 6. User Add/Edit Modal -->
+    <div id="modal-user" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-card w-full max-w-md p-6 rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-4 transform scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800/50 pb-3">
+                <h3 id="user-modal-title" class="font-bold text-base flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-ios-red"></i> Thêm / Chỉnh Sửa Nhân Sự
+                </h3>
+                <button onclick="closeModal('modal-user')" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="form-user" onsubmit="handleUserFormSubmit(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="user-edit-id">
+                <div>
+                    <label class="block font-bold text-slate-500 uppercase mb-1">Họ và tên nhân viên *</label>
+                    <input type="text" id="user-input-name" required placeholder="Ví dụ: Nguyễn Văn A" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-500 uppercase mb-1">Email / Tài khoản *</label>
+                    <input type="email" id="user-input-email" required placeholder="nhanvien@resort.com" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-500 uppercase mb-1">Chức vụ / Quyền *</label>
+                        <select id="user-input-role" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                            <option value="Kỹ thuật">Kỹ thuật</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-500 uppercase mb-1">Trạng thái *</label>
+                        <select id="user-input-status" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                            <option value="Hoạt động">Hoạt động</option>
+                            <option value="Tạm khóa">Tạm khóa</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200/50 dark:border-slate-800/50">
+                    <button type="button" onclick="closeModal('modal-user')" class="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 font-semibold">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-ios-red text-white font-bold shadow-md hover:bg-ios-red/90">Lưu Nhân Sự</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Strict Confirmation Modal for Status Changes / Destructive Actions -->
+    <div id="modal-confirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-card w-full max-w-sm p-6 rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-4 text-center transform scale-95 transition-transform duration-300">
+            <div class="w-12 h-12 rounded-2xl bg-ios-orange/10 text-ios-orange flex items-center justify-center mx-auto">
+                <i data-lucide="alert-circle" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <h3 id="confirm-modal-title" class="font-bold text-base mb-1">Xác Nhận Thao Tác Trạng Thái</h3>
+                <p id="confirm-modal-desc" class="text-xs text-slate-500">Bạn có chắc chắn muốn thay đổi trạng thái công việc này không? Thao tác này sẽ đồng bộ ngay lập tức lên hệ thống.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="closeModal('modal-confirm')" class="py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-300 transition-colors">Hủy Bỏ</button>
+                <button id="confirm-modal-btn" onclick="executeConfirmedAction()" class="py-2.5 rounded-xl bg-ios-blue text-white text-xs font-bold shadow-md shadow-ios-blue/20 hover:bg-ios-blue/90 transition-all">Xác Nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Custom Handover Item Modal -->
+    <div id="modal-custom-handover" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-card w-full max-w-md p-6 rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-4 transform scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800/50 pb-3">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-ios-orange"></i> Thêm Mục Bàn Giao Thực Tế
+                </h3>
+                <button onclick="closeModal('modal-custom-handover')" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-500 uppercase mb-1">Nội Dung Hạng Mục *</label>
+                    <input type="text" id="custom-handover-text" placeholder="Ví dụ: Bàn giao chìa khóa phòng kỹ thuật tầng 3..." class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-500 uppercase mb-1">Ghi chú bổ sung</label>
+                    <input type="text" id="custom-handover-note" placeholder="Tình trạng bình thường..." class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button onclick="closeModal('modal-custom-handover')" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-xl font-semibold">Hủy</button>
+                    <button onclick="addCustomHandoverItem()" class="px-4 py-2 bg-ios-orange text-white font-bold rounded-xl shadow-md">Thêm Vào Checklist</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Backup & Restore Modal -->
+    <div id="modal-backup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-card w-full max-w-lg p-6 rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-4 transform scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800/50 pb-3">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i data-lucide="database" class="w-5 h-5 text-ios-blue"></i> Sao Lưu & Phục Hồi Dữ Liệu Hệ Thống
+                </h3>
+                <button onclick="closeModal('modal-backup')" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-4 text-xs">
+                <p class="text-slate-500">Bạn có thể xuất toàn bộ dữ liệu (công việc, bàn giao ca, tài khoản) ra file JSON để sao lưu dự phòng, hoặc khôi phục lại dữ liệu từ file sao lưu trước đó.</p>
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <button onclick="exportSystemJSON()" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex flex-col items-center text-center space-y-2 transition-all">
+                        <i data-lucide="download" class="w-8 h-8 text-ios-blue"></i>
+                        <span class="font-bold">Sao Lưu Dữ Liệu (JSON)</span>
+                        <span class="text-[10px] text-slate-400">Tải file backup về máy</span>
+                    </button>
+                    <label class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex flex-col items-center text-center space-y-2 transition-all cursor-pointer">
+                        <i data-lucide="upload" class="w-8 h-8 text-ios-green"></i>
+                        <span class="font-bold">Phục Hồi Hệ Thống</span>
+                        <span class="text-[10px] text-slate-400">Tải lên file JSON backup</span>
+                        <input type="file" id="import-json-file" onchange="importSystemJSON(event)" accept=".json" class="hidden">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Box -->
+    <div id="toast-box" class="fixed top-20 right-4 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 max-w-sm">
+        <div id="toast-content" class="glass-panel px-4 py-3 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800/80 flex items-center space-x-3 text-xs font-semibold">
+            <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-ios-green"></i>
+            <span id="toast-message">Thông báo hệ thống thành công!</span>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // Global App State & Mock Data
+        let appState = {
+            currentUser: null,
+            schedule: [
+                { id: "SCH-1", date: "2026-03-11", shift: "Ca Sáng", staffName: "Nguyễn Văn A", note: "Trưởng ca" },
+                { id: "SCH-2", date: "2026-03-11", shift: "Ca Sáng", staffName: "Trần Văn B", note: "Kỹ thuật viên chính" },
+                { id: "SCH-3", date: "2026-03-11", shift: "Ca Chiều", staffName: "Nguyễn Văn A", note: "Trực ca chiều" },
+                { id: "SCH-4", date: "2026-03-11", shift: "Ca Chiều", staffName: "Lê Văn C", note: "Kỹ thuật viên" }
+            ],
+            tasks: [
+                { id: "TSK-101", date: "2026-03-11", shift: "Ca Sáng", locationType: "Phòng Khách", locationDetail: "Phòng 302", description: "Điều hòa không lạnh, dàn lạnh kêu to", assignee: "Nguyễn Văn A", status: "Chưa hoàn thành", priority: "Khẩn cấp" },
+                { id: "TSK-102", date: "2026-03-11", shift: "Ca Sáng", locationType: "Phòng Khách", locationDetail: "Phòng 508", description: "Bóng đèn nhà vệ sinh bị cháy", assignee: "Trần Văn B", status: "Hoàn thành", priority: "Bình thường" },
+                { id: "TSK-103", date: "2026-03-11", shift: "Ca Sáng", locationType: "Khu Công Cộng", locationDetail: "Hồ Bơi Chính", description: "Đèn chiếu sáng hồ bơi không sáng", assignee: "Lê Văn C", status: "Chưa hoàn thành", priority: "Khẩn cấp" },
+                { id: "TSK-104", date: "2026-03-11", shift: "Ca Chiều", locationType: "Phòng Khách", locationDetail: "Phòng 204", description: "Khách yêu cầu đổi phòng do tiếng ồn máy bơm", assignee: "Nguyễn Văn A", status: "Sự cố đổi phòng", priority: "Khẩn cấp" },
+                { id: "TSK-105", date: "2026-03-11", shift: "Ca Chiều", locationType: "Khu Công Cộng", locationDetail: "Nhà Hàng Biển Đông", description: "Vòi nước bồn rửa tay bị rò rỉ", assignee: "Trần Văn B", status: "Hoàn thành", priority: "Bình thường" }
+            ],
+            handoverTemplates: [
+                { id: "TMP-1", title: "Kiểm tra hệ thống điện chính & Máy phát điện dự phòng", required: true },
+                { id: "TMP-2", title: "Kiểm tra áp suất bơm nước sinh hoạt & Bể bơi", required: true },
+                { id: "TMP-3", title: "Kiểm tra hệ thống điều hòa trung tâm (Chiller)", required: true },
+                { id: "TMP-4", title: "Kiểm tra tình trạng phòng khách pending (sửa chữa dang dở)", required: true },
+                { id: "TMP-5", title: "Bàn giao chìa khóa kho kỹ thuật & Thiết bị đo đạc", required: false }
+            ],
+            handoverLogs: [
+                { id: "HO-1", date: "2026-03-11", shift: "Ca Sáng", fromStaff: "Nguyễn Văn A", receiver: "Trần Văn B", notes: "Mọi hệ thống hoạt động ổn định, riêng phòng 302 chờ vật tư thay thế quạt dàn lạnh.", items: { "TMP-1": true, "TMP-2": true, "TMP-3": true, "TMP-4": false, "TMP-5": true } }
+            ],
+            users: [
+                { id: "USR-001", name: "Nguyễn Văn A", email: "admin.kythuat@resort.com", password: "123456", role: "Admin", status: "Hoạt động" },
+                { id: "USR-002", name: "Trần Văn B", email: "tran.b@resort.com", password: "123456", role: "Kỹ thuật", status: "Hoạt động" },
+                { id: "USR-003", name: "Lê Văn C", email: "le.c@resort.com", password: "123456", role: "Kỹ thuật", status: "Hoạt động" },
+                { id: "USR-004", name: "Phạm Thị D", email: "pham.d@resort.com", password: "123456", role: "Kỹ thuật", status: "Tạm khóa" }
+            ]
+        };
+
+        // Pending action for confirmation modal
+        let pendingActionCallback = null;
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            // Load from localStorage if available
+            const savedState = localStorage.getItem("so_truc_ca_state");
+            if (savedState) {
+                try {
+                    appState = JSON.parse(savedState);
+                } catch(e) { console.error("Error loading local storage", e); }
+            }
+
+            // Check if user session active
+            const activeUserStr = localStorage.getItem("so_truc_ca_current_user");
+            if (activeUserStr) {
+                try {
+                    appState.currentUser = JSON.parse(activeUserStr);
+                    document.getElementById('login-screen').classList.add('opacity-0', 'pointer-events-none');
+                } catch(e) {}
+            }
+
+            // Set default date filter to today
+            const todayStr = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('filter-date');
+            if (dateInput) dateInput.value = todayStr;
+            const schedDateInput = document.getElementById('schedule-filter-date');
+            if (schedDateInput) schedDateInput.value = todayStr;
+
+            const dateStrSpan = document.getElementById('current-date-str');
+            if (dateStrSpan) dateStrSpan.innerText = new Date().toLocaleDateString('vi-VN');
+
+            // Initialize UI components
+            updateUserProfileUI();
+            renderDashboard();
+            renderScheduleTable();
+            renderTasksTable();
+            renderHandoverChecklist();
+            renderReports();
+            renderAdminPortal();
+
+            // Initialize Lucide icons
+            lucide.createIcons();
+
+            // Simulate Firebase Connection
+            initializeFirebaseSync();
+        };
+
+        // Login Handler
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const emailInput = document.getElementById('login-email-input').value.trim().toLowerCase();
+            const passInput = document.getElementById('login-password-input').value.trim();
+
+            const foundUser = appState.users.find(u => u.email.toLowerCase() === emailInput || u.name.toLowerCase() === emailInput);
+            if (!foundUser) {
+                showToast("Không tìm thấy tài khoản nhân viên này!", "error");
+                return;
+            }
+
+            const userPass = foundUser.password || "123456";
+            if (passInput !== userPass) {
+                showToast("Mật khẩu không chính xác! (Mặc định: 123456)", "error");
+                return;
+            }
+
+            if (foundUser.status === 'Tạm khóa') {
+                showToast("Tài khoản này đang bị tạm khóa. Vui lòng liên hệ Admin!", "error");
+                return;
+            }
+
+            appState.currentUser = foundUser;
+            localStorage.setItem("so_truc_ca_current_user", JSON.stringify(foundUser));
+
+            // Hide login screen with fade
+            const loginScreen = document.getElementById('login-screen');
+            loginScreen.classList.add('opacity-0', 'pointer-events-none');
+
+            updateUserProfileUI();
+            showToast(`Đăng nhập thành công! Xin chào ${foundUser.name}`);
+        }
+
+        function handleLogout() {
+            appState.currentUser = null;
+            localStorage.removeItem("so_truc_ca_current_user");
+            const loginScreen = document.getElementById('login-screen');
+            loginScreen.classList.remove('opacity-0', 'pointer-events-none');
+            showToast("Đã đăng xuất khỏi hệ thống.");
+        }
+
+        // Save State to LocalStorage & Sync
+        function saveState() {
+            localStorage.setItem("so_truc_ca_state", JSON.stringify(appState));
+            showToast("Đã lưu dữ liệu thành công!");
+            renderDashboard();
+            renderScheduleTable();
+            renderTasksTable();
+            renderHandoverChecklist();
+            renderReports();
+            renderAdminPortal();
+            lucide.createIcons();
+        }
+
+        // Open Change Shift Modal / Quick Handover trigger
+        function openChangeShiftModal() {
+            switchView('handover');
+            showToast("Chuyển đến màn hình bàn giao và đổi ca trực.");
+        }
+
+        // Update User Profile UI in Header
+        function updateUserProfileUI() {
+            const userNameEl = document.getElementById('header-user-name');
+            const userRoleEl = document.getElementById('header-user-role');
+            if (userNameEl && appState.currentUser) {
+                userNameEl.innerText = appState.currentUser.name;
+            }
+            if (userRoleEl && appState.currentUser) {
+                userRoleEl.innerText = appState.currentUser.role;
+            }
+            
+            // Also update shift info card if present
+            const leaderNameEl = document.getElementById('shift-leader-name');
+            if (leaderNameEl && appState.currentUser) {
+                leaderNameEl.innerText = appState.currentUser.name;
+            }
+        }
+
+        // Simulated Firebase connection status
+        function initializeFirebaseSync() {
+            setTimeout(() => {
+                const dot = document.getElementById('sync-status-dot');
+                const text = document.getElementById('sync-status-text');
+                if (dot && text) {
+                    dot.className = "w-2 h-2 rounded-full bg-ios-green inline-block";
+                    text.innerText = "Đã đồng bộ Real-time (Firebase & Local)";
+                }
+            }, 1200);
+        }
+
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        // Check initial theme preference
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // View Switching with Fade-Zoom-Dim transition
+        function switchView(viewName) {
+            const views = ['dashboard', 'tasks', 'handover', 'reports', 'schedule', 'admin'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) {
+                    if (v === viewName) {
+                        el.className = "view-transition view-active space-y-6";
+                    } else {
+                        el.className = "view-transition view-hidden space-y-6";
+                    }
+                }
+            });
+
+            // Update active states on nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.getAttribute('data-view') === viewName) {
+                    btn.classList.add('bg-slate-200/80', 'dark:bg-slate-800', 'text-ios-blue');
+                } else {
+                    btn.classList.remove('bg-slate-200/80', 'dark:bg-slate-800', 'text-ios-blue');
+                }
+            });
+
+            lucide.createIcons();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ================= SHIFT SCHEDULE (LỊCH PHÂN CA) EXCEL IMPORT / TEMPLATE =================
+        function downloadScheduleTemplate() {
+            // Weekly matrix template structure: Col 1: Tên Nhân Viên, Col 2: Thứ 2, Col 3: Thứ 3, ..., Col 8: Chủ Nhật
+            const templateData = [
+                { 
+                    "Họ Tên Nhân Viên": "Nguyễn Văn A", 
+                    "Thứ 2 (2026-03-09)": "Ca Sáng", 
+                    "Thứ 3 (2026-03-10)": "Ca Sáng", 
+                    "Thứ 4 (2026-03-11)": "Ca Sáng", 
+                    "Thứ 5 (2026-03-12)": "Ca Chiều", 
+                    "Thứ 6 (2026-03-13)": "Ca Chiều", 
+                    "Thứ 7 (2026-03-14)": "Nghỉ", 
+                    "Chủ Nhật (2026-03-15)": "Nghỉ" 
+                },
+                { 
+                    "Họ Tên Nhân Viên": "Trần Văn B", 
+                    "Thứ 2 (2026-03-09)": "Ca Chiều", 
+                    "Thứ 3 (2026-03-10)": "Ca Chiều", 
+                    "Thứ 4 (2026-03-11)": "Ca Chiều", 
+                    "Thứ 5 (2026-03-12)": "Ca Đêm", 
+                    "Thứ 6 (2026-03-13)": "Ca Đêm", 
+                    "Thứ 7 (2026-03-14)": "Ca Sáng", 
+                    "Chủ Nhật (2026-03-15)": "Ca Sáng" 
+                }
+            ];
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(templateData);
+            XLSX.utils.book_append_sheet(wb, ws, "Phan_Ca_Tuan");
+            XLSX.writeFile(wb, "Mau_Phan_Ca_Tuan_Ky_Thuat.xlsx");
+            showToast("Đã tải file Excel mẫu phân ca dạng tuần thành công!");
+        }
+
+        function importScheduleExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (!json || json.length === 0) {
+                        showToast("File Excel trống hoặc không đúng định dạng!", "error");
+                        return;
+                    }
+
+                    let importedCount = 0;
+                    const baseDateStr = document.getElementById('schedule-filter-date')?.value || new Date().toISOString().split('T')[0];
+                    const baseDate = new Date(baseDateStr);
+
+                    json.forEach(row => {
+                        const staffName = row["Họ Tên Nhân Viên"] || row["Nhân viên"] || row["Tên Nhân Viên"] || row["Nhân Viên"] || "Nhân viên kỹ thuật";
+
+                        Object.keys(row).forEach(colKey => {
+                            if (colKey === "Họ Tên Nhân Viên" || colKey === "Nhân viên" || colKey === "Tên Nhân Viên") return;
+
+                            let dayIndex = -1;
+                            if (colKey.includes("Thứ 2")) dayIndex = 0;
+                            else if (colKey.includes("Thứ 3")) dayIndex = 1;
+                            else if (colKey.includes("Thứ 4")) dayIndex = 2;
+                            else if (colKey.includes("Thứ 5")) dayIndex = 3;
+                            else if (colKey.includes("Thứ 6")) dayIndex = 4;
+                            else if (colKey.includes("Thứ 7")) dayIndex = 5;
+                            else if (colKey.includes("Chủ Nhật") || colKey.includes("CN")) dayIndex = 6;
+
+                            if (dayIndex !== -1) {
+                                let rawVal = String(row[colKey] || "").trim();
+                                if (!rawVal || rawVal === "Nghỉ" || rawVal === "-") return;
+
+                                // Parse shift code rule: M = Ca Sáng, E = Ca Chiều, N = Ca Đêm
+                                let mappedShift = rawVal;
+                                const upperCode = rawVal.toUpperCase();
+                                if (upperCode.startsWith("M") || upperCode === "M") {
+                                    mappedShift = "Ca Sáng";
+                                } else if (upperCode.startsWith("E") || upperCode === "E") {
+                                    mappedShift = "Ca Chiều";
+                                } else if (upperCode.startsWith("N") || upperCode === "N") {
+                                    mappedShift = "Ca Đêm";
+                                }
+
+                                const targetDate = new Date(baseDate);
+                                targetDate.setDate(baseDate.getDate() + dayIndex);
+                                const dateStr = targetDate.toISOString().split('T')[0];
+
+                                const newSched = {
+                                    id: "SCH-WEEK-" + Date.now() + Math.floor(Math.random() * 10000),
+                                    date: dateStr,
+                                    shift: mappedShift,
+                                    staffName: String(staffName),
+                                    note: `Mã ca: ${rawVal}`
+                                };
+                                appState.schedule.unshift(newSched);
+                                importedCount++;
+                            }
+                        });
+                    });
+
+                    saveState();
+                    showToast(`Đã nhập thành công ${importedCount} lịch ca theo quy tắc M/E/N!`);
+                    event.target.value = '';
+                } catch(err) {
+                    console.error(err);
+                    showToast("Lỗi khi đọc file Excel phân ca tuần!", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderScheduleTable() {
+            const filterDate = document.getElementById('schedule-filter-date')?.value || '';
+            const tbody = document.getElementById('schedule-table-tbody');
+            if (!tbody) return;
+
+            let filtered = appState.schedule;
+            if (filterDate) {
+                filtered = filtered.filter(s => s.date === filterDate);
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Chưa có lịch phân ca nào trong ngày này.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(s => `
+                <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td class="p-3 font-semibold">${s.date}</td>
+                    <td class="p-3">
+                        <span class="px-2.5 py-0.5 rounded-full bg-ios-teal/10 text-ios-teal font-bold text-[11px]">${s.shift}</span>
+                    </td>
+                    <td class="p-3 font-bold text-slate-800 dark:text-slate-100">${s.staffName}</td>
+                    <td class="p-3 text-slate-500">${s.note || '-'}</td>
+                    <td class="p-3 text-right">
+                        <button onclick="deleteSchedule('${s.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-ios-red" title="Xóa lịch phân ca"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function openAssignScheduleModal() {
+            const todayStr = document.getElementById('schedule-filter-date')?.value || new Date().toISOString().split('T')[0];
+            document.getElementById('sched-date').value = todayStr;
+            
+            // Populate staff dropdown
+            const staffSelect = document.getElementById('sched-staff-name');
+            staffSelect.innerHTML = appState.users.map(u => `<option value="${u.name}">${u.name} (${u.role})</option>`).join('');
+
+            openModal('modal-schedule');
+        }
+
+        function handleScheduleFormSubmit(e) {
+            e.preventDefault();
+            const date = document.getElementById('sched-date').value;
+            const shift = document.getElementById('sched-shift').value;
+            const staffName = document.getElementById('sched-staff-name').value;
+            const note = document.getElementById('sched-note').value;
+
+            const newSched = {
+                id: "SCH-" + Date.now(),
+                date,
+                shift,
+                staffName,
+                note
+            };
+
+            appState.schedule.unshift(newSched);
+            closeModal('modal-schedule');
+            saveState();
+            showToast("Đã phân ca trực thành công!");
+        }
+
+        function deleteSchedule(id) {
+            appState.schedule = appState.schedule.filter(s => s.id !== id);
+            saveState();
+            showToast("Đã xóa lịch phân ca.");
+        }
+
+        // Update Assignee Dropdown in Task Modal based on selected Shift & Date
+        function updateAssigneeDropdown() {
+            const shift = document.getElementById('task-shift').value;
+            const taskDate = document.getElementById('filter-date')?.value || new Date().toISOString().split('T')[0];
+            const assigneeSelect = document.getElementById('task-assignee');
+            if (!assigneeSelect) return;
+
+            // Find staff scheduled for this shift & date
+            const scheduledStaff = appState.schedule.filter(s => s.shift === shift && s.date === taskDate);
+
+            let availableStaff = scheduledStaff.map(s => s.staffName);
+            // If no one is explicitly scheduled for this shift yet, fallback to all active users
+            if (availableStaff.length === 0) {
+                availableStaff = appState.users.map(u => u.name);
+            }
+
+            assigneeSelect.innerHTML = availableStaff.map(name => `<option value="${name}">${name}</option>`).join('');
+        }
+
+        <!-- ================= DASHBOARD RENDERING ================= -->
+        function renderDashboard() {
+            const filterDate = document.getElementById('filter-date')?.value || '';
+            const filterShift = document.getElementById('filter-shift')?.value || 'ALL';
+
+            // ALL tasks in the system
+            const allTasks = appState.tasks;
+
+            // 1. DASHBOARD METRICS: Filter strictly by selected date and shift for current period snapshot
+            let filteredBySelection = allTasks;
+            if (filterDate) {
+                filteredBySelection = filteredBySelection.filter(t => t.date === filterDate);
+            }
+            if (filterShift !== 'ALL') {
+                filteredBySelection = filteredBySelection.filter(t => t.shift === filterShift);
+            }
+
+            const guestIssues = filteredBySelection.filter(t => t.locationType === 'Phòng Khách');
+            const publicIssues = filteredBySelection.filter(t => t.locationType === 'Khu Công Cộng');
+            const completedInSelection = filteredBySelection.filter(t => t.status === 'Hoàn thành');
+            const roomChanges = filteredBySelection.filter(t => t.status === 'Sự cố đổi phòng' || t.description.toLowerCase().includes('đổi phòng'));
+
+            // 2. BACKLOG / PENDING TASKS: Accumulate & roll over continuously from all past shifts/days until completed
+            const allPendingTasks = allTasks.filter(t => t.status !== 'Hoàn thành');
+
+            // Update KPI cards
+            document.getElementById('stat-guest-issues').innerText = guestIssues.length;
+            document.getElementById('stat-guest-done').innerText = guestIssues.filter(t => t.status === 'Hoàn thành').length;
+            document.getElementById('stat-public-issues').innerText = publicIssues.length;
+            document.getElementById('stat-public-done').innerText = publicIssues.filter(t => t.status === 'Hoàn thành').length;
+            document.getElementById('stat-completed').innerText = completedInSelection.length;
+            // Display total accumulated pending tasks across the entire system until resolved
+            document.getElementById('stat-pending').innerText = allPendingTasks.length;
+            document.getElementById('stat-room-changes').innerText = roomChanges.length;
+
+            const rate = filteredBySelection.length > 0 ? Math.round((completedInSelection.length / filteredBySelection.length) * 100) : 0;
+            document.getElementById('stat-rate').innerText = rate + '%';
+
+            // Render Cumulative Backlog Table in Dashboard (displays ALL uncompleted tasks across all past/current shifts until finished)
+            const backlogTbody = document.getElementById('dashboard-backlog-tbody');
+            if (backlogTbody) {
+                if (allPendingTasks.length === 0) {
+                    backlogTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Không có lỗi tồn đọng nào trên toàn hệ thống! Tuyệt vời.</td></tr>`;
+                } else {
+                    backlogTbody.innerHTML = allPendingTasks.map(t => `
+                        <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
+                            <td class="p-3 font-semibold">
+                                <span class="px-2 py-0.5 rounded bg-ios-blue/10 text-ios-blue">${t.locationType}</span> ${t.locationDetail}
+                                <div class="text-[10px] text-slate-400 mt-0.5">${t.date} (${t.shift})</div>
+                            </td>
+                            <td class="p-3 text-slate-600 dark:text-slate-300">
+                                <div>${t.description}</div>
+                                ${t.priority === 'Khẩn cấp' ? '<span class="inline-block mt-1 px-1.5 py-0.5 rounded bg-ios-red text-white text-[9px] font-bold">KHẨN CẤP</span>' : ''}
+                            </td>
+                            <td class="p-3">${t.assignee}</td>
+                            <td class="p-3 text-right">
+                                <button onclick="promptChangeTaskStatus('${t.id}', 'Hoàn thành')" class="px-2.5 py-1 bg-ios-green text-white rounded-lg font-bold text-[11px] shadow-sm hover:bg-ios-green/90">Xử lý xong</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            }
+
+            // Render Handover summary in Dashboard
+            const handoverSummary = document.getElementById('dashboard-handover-summary');
+            if (handoverSummary) {
+                const latestLog = appState.handoverLogs[appState.handoverLogs.length - 1];
+                if (!latestLog) {
+                    handoverSummary.innerHTML = `<p class="text-xs text-slate-400">Chưa có biên bản bàn giao ca nào.</p>`;
+                } else {
+                    handoverSummary.innerHTML = `
+                        <div class="p-3 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 space-y-2">
+                            <div class="flex justify-between text-[11px] font-bold text-slate-400">
+                                <span>${latestLog.shift} (${latestLog.date})</span>
+                                <span class="text-ios-orange">Giao: ${latestLog.fromStaff}</span>
+                            </div>
+                            <p class="text-xs italic text-slate-600 dark:text-slate-300">"${latestLog.notes}"</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function resetDashboardFilters() {
+            document.getElementById('filter-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('filter-shift').value = 'ALL';
+            renderDashboard();
+        }
+
+        // ================= TASK MANAGEMENT RENDERING =================
+        function renderTasksTable() {
+            const search = document.getElementById('task-search')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('task-filter-status')?.value || 'ALL';
+            const locationFilter = document.getElementById('task-filter-location')?.value || 'ALL';
+            const filterDate = document.getElementById('filter-date')?.value || '';
+            const filterShift = document.getElementById('filter-shift')?.value || 'ALL';
+
+            let filtered = appState.tasks.filter(t => {
+                if (t.status === 'Hoàn thành') {
+                    if (filterDate && t.date !== filterDate) return false;
+                    if (filterShift !== 'ALL' && t.shift !== filterShift) return false;
+                }
+
+                const matchSearch = t.locationDetail.toLowerCase().includes(search) || t.description.toLowerCase().includes(search) || t.assignee.toLowerCase().includes(search);
+                const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
+                const matchLocation = locationFilter === 'ALL' || t.locationType === locationFilter;
+                return matchSearch && matchStatus && matchLocation;
+            });
+
+            const tbody = document.getElementById('tasks-table-tbody');
+            if (!tbody) return;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Không tìm thấy công việc phù hợp.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(t => {
+                let badgeColor = 'bg-ios-green/10 text-ios-green';
+                if (t.status === 'Chưa hoàn thành') badgeColor = 'bg-ios-red/10 text-ios-red';
+                if (t.status === 'Sự cố đổi phòng') badgeColor = 'bg-ios-purple/10 text-ios-purple';
+
+                return `
+                    <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="p-3">
+                            <div class="font-bold">${t.shift}</div>
+                            <div class="text-[10px] text-slate-400">${t.date}</div>
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 font-semibold text-[10px]">${t.locationType}</span>
+                            <div class="font-bold mt-0.5">${t.locationDetail}</div>
+                        </td>
+                        <td class="p-3 max-w-xs text-slate-600 dark:text-slate-300">
+                            <p class="font-medium">${t.description}</p>
+                            ${t.priority === 'Khẩn cấp' ? '<span class="inline-block mt-1 px-1.5 py-0.5 rounded bg-ios-red text-white text-[9px] font-bold">KHẨN CẤP</span>' : ''}
+                        </td>
+                        <td class="p-3 font-medium">${t.assignee}</td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeColor}">${t.status}</span>
+                        </td>
+                        <td class="p-3 text-right space-x-1">
+                            ${t.status !== 'Hoàn thành' ? `
+                                <button onclick="promptChangeTaskStatus('${t.id}', 'Hoàn thành')" class="px-2.5 py-1 bg-ios-green text-white rounded-lg font-bold text-[11px] shadow-sm hover:bg-ios-green/90" title="Xác nhận hoàn thành">Hoàn thành</button>
+                            ` : `
+                                <button onclick="promptChangeTaskStatus('${t.id}', 'Chưa hoàn thành')" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 rounded-lg font-bold text-[11px] hover:bg-slate-300" title="Đưa về chưa hoàn thành">Mở lại</button>
+                            `}
+                            <button onclick="deleteTask('${t.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-ios-red" title="Xóa"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function openAddTaskModal() {
+            document.getElementById('task-modal-title').innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-ios-blue"></i> Thêm Mới Công Việc Kỹ Thuật`;
+            document.getElementById('task-edit-id').value = '';
+            document.getElementById('form-task').reset();
+            updateAssigneeDropdown();
+            openModal('modal-task');
+        }
+
+        function toggleLocationFields() {
+            const type = document.getElementById('task-location-type').value;
+            const roomContainer = document.getElementById('container-room-no');
+            const areaContainer = document.getElementById('container-area-name');
+            if (type === 'Phòng Khách') {
+                roomContainer.classList.remove('hidden');
+                areaContainer.classList.add('hidden');
+            } else {
+                roomContainer.classList.add('hidden');
+                areaContainer.classList.remove('hidden');
+            }
+        }
+
+        function handleTaskFormSubmit(e) {
+            e.preventDefault();
+            const locationType = document.getElementById('task-location-type').value;
+            const locationDetail = locationType === 'Phòng Khách' ? document.getElementById('task-room-number').value : document.getElementById('task-area-name').value;
+            const shift = document.getElementById('task-shift').value;
+            const assignee = document.getElementById('task-assignee').value;
+            const description = document.getElementById('task-description').value;
+            const status = document.getElementById('task-status').value;
+            const priority = document.getElementById('task-priority').value;
+
+            const newTask = {
+                id: "TSK-" + Math.floor(100 + Math.random() * 900),
+                date: document.getElementById('filter-date')?.value || new Date().toISOString().split('T')[0],
+                shift,
+                locationType,
+                locationDetail,
+                description,
+                assignee,
+                status,
+                priority
+            };
+
+            appState.tasks.unshift(newTask);
+            closeModal('modal-task');
+            saveState();
+            showToast("Đã thêm công việc thành công và đồng bộ!");
+        }
+
+        // Inline Quick Excel-style task submission
+        function toggleInlineLocationFields() {
+            // Handled dynamically if needed for custom placeholder
+        }
+
+        function submitInlineQuickTask() {
+            const shift = document.getElementById('quick-inline-shift').value;
+            const locationType = document.getElementById('quick-inline-loc-type').value;
+            const locationDetail = document.getElementById('quick-inline-loc-detail').value.trim();
+            const description = document.getElementById('quick-inline-desc').value.trim();
+            const status = document.getElementById('quick-inline-status').value;
+
+            if (!locationDetail || !description) {
+                showToast("Vui lòng nhập đầy đủ Số phòng/Khu vực và Nội dung công việc!", "error");
+                return;
+            }
+
+            // Assign default technician based on scheduled staff or current user
+            const currentFilterDate = document.getElementById('filter-date')?.value || new Date().toISOString().split('T')[0];
+            const scheduled = appState.schedule.filter(s => s.shift === shift && s.date === currentFilterDate);
+            const assignee = scheduled.length > 0 ? scheduled[0].staffName : (appState.currentUser?.name || "Kỹ thuật trực");
+
+            const newTask = {
+                id: "TSK-INLINE-" + Math.floor(100 + Math.random() * 900),
+                date: currentFilterDate,
+                shift,
+                locationType,
+                locationDetail: (locationType === 'Phòng Khách' ? 'Phòng ' : '') + locationDetail,
+                description,
+                assignee,
+                status,
+                priority: 'Bình thường'
+            };
+
+            appState.tasks.unshift(newTask);
+            document.getElementById('quick-inline-loc-detail').value = '';
+            document.getElementById('quick-inline-desc').value = '';
+            saveState();
+            showToast("Đã nhập nhanh công việc thành công!");
+        }
+
+        // Strict confirmation modal for status changes
+        function promptChangeTaskStatus(taskId, newStatus) {
+            const task = appState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            document.getElementById('confirm-modal-title').innerText = `Xác Nhận Thay Đổi Trạng Thái`;
+            document.getElementById('confirm-modal-desc').innerText = `Bạn có chắc chắn muốn chuyển trạng thái công việc tại [${task.locationDetail}] thành "${newStatus}"? Thao tác này có tính ràng buộc vận hành.`;
+            
+            pendingActionCallback = () => {
+                task.status = newStatus;
+                saveState();
+                showToast(`Đã cập nhật trạng thái thành "${newStatus}"!`);
+            };
+
+            openModal('modal-confirm');
+        }
+
+        function executeConfirmedAction() {
+            if (pendingActionCallback) {
+                pendingActionCallback();
+                pendingActionCallback = null;
+            }
+            closeModal('modal-confirm');
+        }
+
+        function deleteTask(taskId) {
+            appState.tasks = appState.tasks.filter(t => t.id !== taskId);
+            saveState();
+            showToast("Đã xóa công việc khỏi hệ thống.");
+        }
+
+        // ================= SHIFT HANDOVER RENDERING =================
+        function renderHandoverChecklist() {
+            const container = document.getElementById('handover-checklist-container');
+            if (!container) return;
+
+            container.innerHTML = appState.handoverTemplates.map(tmp => `
+                <label class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-800/60 hover:bg-slate-200/70 transition-colors cursor-pointer">
+                    <div class="flex items-center space-x-3">
+                        <input type="checkbox" data-template-id="${tmp.id}" class="handover-chk w-4 h-4 rounded text-ios-orange focus:ring-ios-orange" checked>
+                        <span class="text-xs font-semibold">${tmp.title}</span>
+                    </div>
+                    ${tmp.required ? '<span class="text-[10px] px-2 py-0.5 rounded bg-ios-orange/10 text-ios-orange font-bold uppercase">Bắt buộc</span>' : '<span class="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-500">Tùy chọn</span>'}
+                </label>
+            `).join('');
+        }
+
+        function openCustomHandoverModal() {
+            document.getElementById('custom-handover-text').value = '';
+            document.getElementById('custom-handover-note').value = '';
+            openModal('modal-custom-handover');
+        }
+
+        function addCustomHandoverItem() {
+            const text = document.getElementById('custom-handover-text').value.trim();
+            if (!text) {
+                showToast("Vui lòng nhập nội dung hạng mục!", "error");
+                return;
+            }
+
+            const newId = "TMP-CUSTOM-" + Date.now();
+            appState.handoverTemplates.push({ id: newId, title: text, required: false });
+            closeModal('modal-custom-handover');
+            renderHandoverChecklist();
+            showToast("Đã thêm hạng mục bàn giao thực tế!");
+        }
+
+        function saveHandoverLog() {
+            const shift = document.getElementById('handover-from-shift').value;
+            const fromStaff = document.getElementById('handover-staff-name').value;
+            const receiver = document.getElementById('handover-receiver-name').value;
+            const notes = document.getElementById('handover-general-notes').value;
+
+            const itemsState = {};
+            document.querySelectorAll('.handover-chk').forEach(chk => {
+                itemsState[chk.getAttribute('data-template-id')] = chk.checked;
+            });
+
+            const newLog = {
+                id: "HO-" + Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                shift,
+                fromStaff,
+                receiver,
+                notes,
+                items: itemsState
+            };
+
+            appState.handoverLogs.push(newLog);
+            saveState();
+            showToast("Đã lưu biên bản bàn giao ca thành công!");
+        }
+
+        // ================= REPORTS RENDERING =================
+        function renderReports() {
+            const total = appState.tasks.length;
+            const done = appState.tasks.filter(t => t.status === 'Hoàn thành').length;
+            const pending = appState.tasks.filter(t => t.status === 'Chưa hoàn thành').length;
+
+            document.getElementById('report-total-tasks').innerText = total;
+            document.getElementById('report-done-tasks').innerText = done;
+            document.getElementById('report-pending-tasks').innerText = pending;
+
+            const techMap = {};
+            appState.tasks.forEach(t => {
+                if (!techMap[t.assignee]) techMap[t.assignee] = { total: 0, done: 0, pending: 0 };
+                techMap[t.assignee].total += 1;
+                if (t.status === 'Hoàn thành') techMap[t.assignee].done += 1;
+                else techMap[t.assignee].pending += 1;
+            });
+
+            const techTbody = document.getElementById('report-technician-tbody');
+            if (!techTbody) return;
+
+            const techKeys = Object.keys(techMap);
+            if (techKeys.length === 0) {
+                techTbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Chưa có dữ liệu nhân sự thực hiện.</td></tr>`;
+                return;
+            }
+
+            techTbody.innerHTML = techKeys.map(name => {
+                const stats = techMap[name];
+                const rate = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+                return `
+                    <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
+                        <td class="p-3 font-bold">${name}</td>
+                        <td class="p-3">${stats.total}</td>
+                        <td class="p-3 text-ios-green font-semibold">${stats.done}</td>
+                        <td class="p-3 text-ios-red font-semibold">${stats.pending}</td>
+                        <td class="p-3 font-bold">${rate}%</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            const wsData = appState.tasks.map(t => ({
+                "Mã Công Việc": t.id,
+                "Ngày": t.date,
+                "Ca Trực": t.shift,
+                "Loại Vị Trí": t.locationType,
+                "Chi Tiết Vị Trí": t.locationDetail,
+                "Nội Dung Sự Cố": t.description,
+                "Nhân Sự Thực Hiện": t.assignee,
+                "Trạng Thái": t.status,
+                "Mức Độ": t.priority
+            }));
+            const ws = XLSX.utils.json_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, "SoTrucCa_Tasks");
+            XLSX.writeFile(wb, "SoTrucCa_BaoCaoKyThuat.xlsx");
+            showToast("Đã xuất file Excel thành công!");
+        }
+
+        // ================= ADMIN PORTAL RENDERING =================
+        function renderAdminPortal() {
+            const usersTbody = document.getElementById('admin-users-tbody');
+            if (usersTbody) {
+                if (appState.users.length === 0) {
+                    usersTbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Chưa có nhân sự nào trong hệ thống.</td></tr>`;
+                } else {
+                    usersTbody.innerHTML = appState.users.map(u => `
+                        <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
+                            <td class="p-3 font-bold">${u.name}</td>
+                            <td class="p-3 text-slate-500">${u.email}</td>
+                            <td class="p-3"><span class="px-2 py-0.5 rounded font-bold text-[10px] ${u.role === 'Admin' ? 'bg-ios-red/10 text-ios-red' : 'bg-ios-blue/10 text-ios-blue'}">${u.role}</span></td>
+                            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${u.status === 'Hoạt động' ? 'bg-ios-green/10 text-ios-green' : 'bg-slate-200 text-slate-500'}">${u.status}</span></td>
+                            <td class="p-3 text-right space-x-1">
+                                <button onclick="openEditUserModal('${u.id}')" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 rounded-lg text-[11px] font-semibold hover:bg-slate-300" title="Chỉnh sửa nhân sự">Sửa</button>
+                                <button onclick="deleteUser('${u.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-ios-red" title="Xóa nhân sự"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            }
+
+            const templatesContainer = document.getElementById('admin-templates-container');
+            if (templatesContainer) {
+                templatesContainer.innerHTML = appState.handoverTemplates.map(tmp => `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-100/60 dark:bg-slate-800/50 text-xs">
+                        <span class="font-medium">${tmp.title}</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] text-slate-400">${tmp.required ? 'Bắt buộc' : 'Tùy chọn'}</span>
+                            <button onclick="deleteTemplate('${tmp.id}')" class="p-1 rounded text-slate-400 hover:text-ios-red"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function toggleUserRole(userId) {
+            const user = appState.users.find(u => u.id === userId);
+            if (!user) return;
+            user.role = user.role === 'Admin' ? 'Kỹ thuật' : 'Admin';
+            saveState();
+            showToast(`Đã chuyển quyền tài khoản [${user.name}] thành ${user.role}!`);
+        }
+
+        function openAddUserModal() {
+            document.getElementById('user-modal-title').innerHTML = `<i data-lucide="user-plus" class="w-5 h-5 text-ios-red"></i> Thêm Nhân Sự Mới`;
+            document.getElementById('user-edit-id').value = '';
+            document.getElementById('form-user').reset();
+            openModal('modal-user');
+        }
+
+        function openEditUserModal(userId) {
+            const user = appState.users.find(u => u.id === userId);
+            if (!user) return;
+            document.getElementById('user-modal-title').innerHTML = `<i data-lucide="user-cog" class="w-5 h-5 text-ios-blue"></i> Chỉnh Sửa Thông Tin Nhân Sự`;
+            document.getElementById('user-edit-id').value = user.id;
+            document.getElementById('user-input-name').value = user.name;
+            document.getElementById('user-input-email').value = user.email;
+            document.getElementById('user-input-role').value = user.role;
+            document.getElementById('user-input-status').value = user.status;
+            openModal('modal-user');
+        }
+
+        function handleUserFormSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('user-edit-id').value;
+            const name = document.getElementById('user-input-name').value.trim();
+            const email = document.getElementById('user-input-email').value.trim();
+            const role = document.getElementById('user-input-role').value;
+            const status = document.getElementById('user-input-status').value;
+
+            if (editId) {
+                // Edit existing
+                const user = appState.users.find(u => u.id === editId);
+                if (user) {
+                    user.name = name;
+                    user.email = email;
+                    user.role = role;
+                    user.status = status;
+                    showToast("Đã cập nhật thông tin nhân sự thành công!");
+                }
+            } else {
+                // Add new with default password 123456
+                const newUser = {
+                    id: "USR-" + Date.now(),
+                    name,
+                    email,
+                    password: "123456",
+                    role,
+                    status
+                };
+                appState.users.unshift(newUser);
+                showToast("Đã thêm nhân sự mới thành công! (Mật khẩu mặc định: 123456)");
+            }
+
+            closeModal('modal-user');
+            saveState();
+        }
+
+        function deleteUser(userId) {
+            if (appState.users.length <= 1) {
+                showToast("Cần duy trì ít nhất một tài khoản trong hệ thống!", "error");
+                return;
+            }
+            appState.users = appState.users.filter(u => u.id !== userId);
+            saveState();
+            showToast("Đã xóa nhân sự khỏi hệ thống.");
+        }
+
+        function deleteTemplate(id) {
+            appState.handoverTemplates = appState.handoverTemplates.filter(t => t.id !== id);
+            saveState();
+            showToast("Đã xóa hạng mục checklist chuẩn.");
+        }
+
+        function openAddTemplateModal() {
+            const title = prompt("Nhập tiêu đề hạng mục checklist bàn giao chuẩn mới:");
+            if (title) {
+                appState.handoverTemplates.push({ id: "TMP-" + Date.now(), title, required: true });
+                saveState();
+                showToast("Đã thêm template bàn giao mới!");
+            }
+        }
+
+        // ================= BACKUP & RESTORE =================
+        function openBackupModal() {
+            openModal('modal-backup');
+        }
+
+        function exportSystemJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `SoTrucCa_Backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Đã xuất file sao lưu hệ thống thành công!");
+        }
+
+        function importSystemJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.tasks && parsed.users) {
+                        appState = parsed;
+                        saveState();
+                        closeModal('modal-backup');
+                        showToast("Khôi phục hệ thống thành công từ file backup!");
+                    } else {
+                        showToast("File JSON không hợp lệ cấu trúc Sổ Trực Ca!", "error");
+                    }
+                } catch(err) {
+                    showToast("Lỗi đọc file JSON!", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ================= MODAL & TOAST HELPERS =================
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            const card = modal.querySelector('.transform');
+            if (card) {
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }
+            lucide.createIcons();
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            const card = modal.querySelector('.transform');
+            if (card) {
+                card.classList.remove('scale-100');
+                card.classList.add('scale-95');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast-box');
+            const msg = document.getElementById('toast-message');
+            const icon = document.getElementById('toast-icon');
+            if (!toast || !msg) return;
+
+            msg.innerText = message;
+            if (type === 'error') {
+                icon.setAttribute('data-lucide', 'alert-circle');
+                icon.className = "w-5 h-5 text-ios-red";
+            } else {
+                icon.setAttribute('data-lucide', 'check-circle');
+                icon.className = "w-5 h-5 text-ios-green";
+            }
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function toggleMobileMenu() {
+            switchView('dashboard');
+        }
+    </script>
+</body>
+</html>
